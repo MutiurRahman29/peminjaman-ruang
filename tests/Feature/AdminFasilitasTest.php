@@ -7,6 +7,8 @@ use App\Models\Fasilitas;
 use App\Models\Peminjaman;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminFasilitasTest extends TestCase
@@ -56,6 +58,23 @@ class AdminFasilitasTest extends TestCase
             ->assertSeeInOrder(['Alpha', '-', 'Zulu']);
     }
 
+    public function test_admin_facility_list_displays_facility_thumbnail(): void
+    {
+        Storage::fake('public');
+        $imagePath = 'fasilitas/proyektor.jpg';
+        Storage::disk('public')->put($imagePath, 'image contents');
+        $fasilitas = Fasilitas::factory()->create([
+            'nama_fasilitas' => 'Proyektor Epson',
+            'gambar' => $imagePath,
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.fasilitas.index'))
+            ->assertOk()
+            ->assertSee($fasilitas->gambar_url, false)
+            ->assertSee('alt="Foto Proyektor Epson"', false);
+    }
+
     public function test_admin_can_create_a_facility_and_blank_description_is_stored_as_null(): void
     {
         $this->actingAs(User::factory()->admin()->create())
@@ -69,6 +88,102 @@ class AdminFasilitasTest extends TestCase
             'kondisi' => KondisiFasilitas::Baik->value,
             'keterangan' => null,
         ]);
+    }
+
+    public function test_admin_can_upload_a_facility_thumbnail(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('admin.fasilitas.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->image('proyektor.jpg'),
+            ])
+            ->assertRedirect(route('admin.fasilitas.index'));
+
+        $fasilitas = Fasilitas::query()->where('nama_fasilitas', 'Proyektor')->firstOrFail();
+
+        $this->assertNotEmpty($fasilitas->gambar);
+        $this->assertTrue(Storage::disk('public')->exists($fasilitas->gambar));
+    }
+
+    public function test_facility_thumbnail_larger_than_four_megabytes_is_accepted(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('admin.fasilitas.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->image('proyektor.jpg')->size(5 * 1024),
+            ])
+            ->assertRedirect(route('admin.fasilitas.index'))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_facility_thumbnail_over_ten_megabytes_is_rejected(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->from(route('admin.fasilitas.create'))
+            ->post(route('admin.fasilitas.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->image('proyektor.jpg')->size(11 * 1024),
+            ])
+            ->assertSessionHasErrors([
+                'gambar' => 'Ukuran gambar maksimal 10 MB.',
+            ]);
+    }
+
+    public function test_admin_can_replace_a_facility_thumbnail(): void
+    {
+        Storage::fake('public');
+        $gambarLama = UploadedFile::fake()->image('lama.jpg')->storePublicly('fasilitas', 'public');
+        $fasilitas = Fasilitas::factory()->create(['gambar' => $gambarLama]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->put(route('admin.fasilitas.update', $fasilitas), [
+                ...$this->validPayload(['nama_fasilitas' => $fasilitas->nama_fasilitas]),
+                'gambar' => UploadedFile::fake()->image('baru.webp'),
+            ])
+            ->assertRedirect(route('admin.fasilitas.index'));
+
+        $fasilitas->refresh();
+
+        $this->assertNotSame($gambarLama, $fasilitas->gambar);
+        $this->assertFalse(Storage::disk('public')->exists($gambarLama));
+        $this->assertTrue(Storage::disk('public')->exists($fasilitas->gambar));
+    }
+
+    public function test_updating_a_facility_without_a_new_thumbnail_keeps_the_existing_image(): void
+    {
+        Storage::fake('public');
+        $gambar = UploadedFile::fake()->image('fasilitas.jpg')->storePublicly('fasilitas', 'public');
+        $fasilitas = Fasilitas::factory()->create(['gambar' => $gambar]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->put(route('admin.fasilitas.update', $fasilitas), $this->validPayload([
+                'nama_fasilitas' => $fasilitas->nama_fasilitas,
+            ]))
+            ->assertRedirect(route('admin.fasilitas.index'));
+
+        $this->assertSame($gambar, $fasilitas->fresh()->gambar);
+        $this->assertTrue(Storage::disk('public')->exists($gambar));
+    }
+
+    public function test_facility_thumbnail_must_be_a_valid_image(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->from(route('admin.fasilitas.create'))
+            ->post(route('admin.fasilitas.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->create('dokumen.pdf', 20, 'application/pdf'),
+            ])
+            ->assertSessionHasErrors([
+                'gambar' => 'File gambar harus berupa gambar yang valid.',
+            ]);
     }
 
     public function test_facility_validation_uses_indonesian_messages_for_required_quantity_and_condition_rules(): void
@@ -163,7 +278,9 @@ class AdminFasilitasTest extends TestCase
 
     public function test_admin_can_delete_a_facility_without_loan_history(): void
     {
-        $fasilitas = Fasilitas::factory()->create();
+        Storage::fake('public');
+        $gambar = UploadedFile::fake()->image('fasilitas.jpg')->storePublicly('fasilitas', 'public');
+        $fasilitas = Fasilitas::factory()->create(['gambar' => $gambar]);
 
         $this->actingAs(User::factory()->admin()->create())
             ->delete(route('admin.fasilitas.destroy', $fasilitas))
@@ -171,6 +288,7 @@ class AdminFasilitasTest extends TestCase
             ->assertSessionHas('success', 'Fasilitas berhasil dihapus.');
 
         $this->assertDatabaseMissing('fasilitas', ['id_fasilitas' => $fasilitas->id_fasilitas]);
+        $this->assertFalse(Storage::disk('public')->exists($gambar));
     }
 
     public function test_facility_with_loan_detail_history_cannot_be_deleted(): void

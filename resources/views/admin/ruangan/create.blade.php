@@ -15,7 +15,7 @@
             <h1 class="section-title text-3xl sm:text-4xl">Tambah Ruangan Baru</h1>
             <p class="mt-3 text-sm leading-6 text-muted">Lengkapi detail ruangan sebelum data dapat digunakan untuk peminjaman.</p>
         </div>
-        <form method="POST" action="{{ route('admin.ruangan.store') }}" class="space-y-6">
+        <form method="POST" action="{{ route('admin.ruangan.store') }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
             <div>
                 <label for="nama_ruangan" class="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Nama Ruangan <span class="text-rose-700">*</span></label>
@@ -51,6 +51,14 @@
                         </svg>
                         <span>{{ $message }}</span>
                     </div>
+                @enderror
+            </div>
+            <div>
+                <label for="gambar" class="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Foto Thumbnail <span class="font-medium normal-case tracking-normal">(opsional)</span></label>
+                <input id="gambar" name="gambar" type="file" accept="image/jpeg,image/png,image/webp" class="w-full rounded-2xl border border-border bg-ivory px-4 py-3 text-sm text-charcoal file:mr-4 file:rounded-lg file:border-0 file:bg-charcoal/5 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-charcoal hover:file:bg-charcoal/10 focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20 @error('gambar') border-rose-700/50 focus:border-rose-700 focus:ring-rose-700/20 @enderror">
+                <p class="mt-2 text-xs text-muted">JPG, PNG, atau WebP. Maksimal 10 MB.</p>
+                @error('gambar')
+                    <p class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>
                 @enderror
             </div>
             <div>

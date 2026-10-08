@@ -36,7 +36,7 @@
                             required
                             autofocus
                             autocomplete="username"
-                            class="@class(['w-full rounded-xl border border-black bg-white px-4 py-5 text-sm text-charcoal outline-none transition focus:border-taupe focus:ring-4 focus:ring-taupe/10', 'border-rose-700/60' => $errors->has('username')])"
+                            @class(['w-full rounded-xl border border-border bg-taupe/10 px-2 py-3 text-sm text-charcoal outline-none transition focus:border-taupe focus:ring-4 focus:ring-taupe/10', 'border-rose-700/60' => $errors->has('username')])
                         >
                         @error('username')
                             <p class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>
@@ -51,7 +51,7 @@
                             type="password"
                             required
                             autocomplete="current-password"
-                            class="@class(['w-full rounded-xl border border-black bg-white px-4 py-5 text-sm text-charcoal outline-none transition focus:border-taupe focus:ring-4 focus:ring-taupe/10', 'border-rose-700/60' => $errors->has('password')])"
+                            @class(['w-full rounded-xl border border-border bg-taupe/10 px-2 py-3 text-sm text-charcoal outline-none transition focus:border-taupe focus:ring-4 focus:ring-taupe/10', 'border-rose-700/60' => $errors->has('password')])
                         >
                         @error('password')
                             <p class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>
@@ -60,7 +60,7 @@
 
                     <div class="flex items-center justify-between gap-3">
                         <label for="remember" class="flex cursor-pointer items-center gap-2 text-sm text-muted">
-                            <input id="remember" name="remember" type="checkbox" value="1" @checked(old('remember')) class="h-4 w-4 rounded border-black bg-ivory text-taupe focus:ring-taupe/30">
+                            <input id="remember" name="remember" type="checkbox" value="1" @checked(old('remember')) class="h-4 w-4 rounded border-black bg-white text-taupe focus:ring-taupe/30">
                             Ingat saya
                         </label>
                     </div>

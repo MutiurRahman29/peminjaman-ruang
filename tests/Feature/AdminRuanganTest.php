@@ -7,6 +7,8 @@ use App\Models\Peminjaman;
 use App\Models\Ruangan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminRuanganTest extends TestCase
@@ -56,6 +58,23 @@ class AdminRuanganTest extends TestCase
             ->assertSeeInOrder(['Alpha', 'Zulu']);
     }
 
+    public function test_admin_room_list_displays_room_thumbnail(): void
+    {
+        Storage::fake('public');
+        $imagePath = 'ruangan/laboratorium.jpg';
+        Storage::disk('public')->put($imagePath, 'image contents');
+        $ruangan = Ruangan::factory()->create([
+            'nama_ruangan' => 'Laboratorium Komputer',
+            'gambar' => $imagePath,
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.ruangan.index'))
+            ->assertOk()
+            ->assertSee($ruangan->gambar_url, false)
+            ->assertSee('alt="Foto Laboratorium Komputer"', false);
+    }
+
     public function test_admin_can_create_a_room(): void
     {
         $this->actingAs(User::factory()->admin()->create())
@@ -64,6 +83,102 @@ class AdminRuanganTest extends TestCase
             ->assertSessionHas('success', 'Ruangan berhasil ditambahkan.');
 
         $this->assertDatabaseHas('ruangan', $this->validPayload());
+    }
+
+    public function test_admin_can_upload_a_room_thumbnail(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('admin.ruangan.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->image('ruang.jpg'),
+            ])
+            ->assertRedirect(route('admin.ruangan.index'));
+
+        $ruangan = Ruangan::query()->where('nama_ruangan', 'Laboratorium Komputer')->firstOrFail();
+
+        $this->assertNotEmpty($ruangan->gambar);
+        Storage::disk('public')->assertExists($ruangan->gambar);
+    }
+
+    public function test_room_thumbnail_larger_than_four_megabytes_is_accepted(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('admin.ruangan.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->image('ruang.jpg')->size(5 * 1024),
+            ])
+            ->assertRedirect(route('admin.ruangan.index'))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_room_thumbnail_over_ten_megabytes_is_rejected(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->from(route('admin.ruangan.create'))
+            ->post(route('admin.ruangan.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->image('ruang.jpg')->size(11 * 1024),
+            ])
+            ->assertSessionHasErrors([
+                'gambar' => 'Ukuran gambar maksimal 10 MB.',
+            ]);
+    }
+
+    public function test_admin_can_replace_a_room_thumbnail(): void
+    {
+        Storage::fake('public');
+        $gambarLama = UploadedFile::fake()->image('lama.jpg')->storePublicly('ruangan', 'public');
+        $ruangan = Ruangan::factory()->create(['gambar' => $gambarLama]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->put(route('admin.ruangan.update', $ruangan), [
+                ...$this->validPayload(['nama_ruangan' => $ruangan->nama_ruangan]),
+                'gambar' => UploadedFile::fake()->image('baru.webp'),
+            ])
+            ->assertRedirect(route('admin.ruangan.index'));
+
+        $ruangan->refresh();
+
+        $this->assertNotSame($gambarLama, $ruangan->gambar);
+        Storage::disk('public')->assertMissing($gambarLama);
+        Storage::disk('public')->assertExists($ruangan->gambar);
+    }
+
+    public function test_updating_a_room_without_a_new_thumbnail_keeps_the_existing_image(): void
+    {
+        Storage::fake('public');
+        $gambar = UploadedFile::fake()->image('ruang.jpg')->storePublicly('ruangan', 'public');
+        $ruangan = Ruangan::factory()->create(['gambar' => $gambar]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->put(route('admin.ruangan.update', $ruangan), $this->validPayload([
+                'nama_ruangan' => $ruangan->nama_ruangan,
+            ]))
+            ->assertRedirect(route('admin.ruangan.index'));
+
+        $this->assertSame($gambar, $ruangan->fresh()->gambar);
+        Storage::disk('public')->assertExists($gambar);
+    }
+
+    public function test_room_thumbnail_must_be_a_valid_image(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->from(route('admin.ruangan.create'))
+            ->post(route('admin.ruangan.store'), [
+                ...$this->validPayload(),
+                'gambar' => UploadedFile::fake()->create('dokumen.pdf', 20, 'application/pdf'),
+            ])
+            ->assertSessionHasErrors([
+                'gambar' => 'File gambar harus berupa gambar yang valid.',
+            ]);
     }
 
     public function test_room_validation_uses_indonesian_messages_for_required_capacity_and_status_rules(): void
@@ -165,6 +280,19 @@ class AdminRuanganTest extends TestCase
             ->assertSessionHas('success', 'Ruangan berhasil dihapus.');
 
         $this->assertDatabaseMissing('ruangan', ['id_ruangan' => $ruangan->id_ruangan]);
+    }
+
+    public function test_deleting_a_room_also_deletes_its_thumbnail(): void
+    {
+        Storage::fake('public');
+        $gambar = UploadedFile::fake()->image('ruang.jpg')->storePublicly('ruangan', 'public');
+        $ruangan = Ruangan::factory()->create(['gambar' => $gambar]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->delete(route('admin.ruangan.destroy', $ruangan))
+            ->assertRedirect(route('admin.ruangan.index'));
+
+        Storage::disk('public')->assertMissing($gambar);
     }
 
     public function test_room_with_loan_history_cannot_be_deleted(): void

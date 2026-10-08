@@ -47,6 +47,21 @@ class AuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_admin_login_ignores_a_previously_intended_borrower_url(): void
+    {
+        $user = User::factory()->admin()->create([
+            'username' => 'admin-login',
+        ]);
+
+        $this->get(route('peminjam.peminjaman.index'))
+            ->assertRedirect(route('login'));
+
+        $this->post(route('admin.login.store'), [
+            'username' => $user->username,
+            'password' => 'password',
+        ])->assertRedirect(route('admin.dashboard'));
+    }
+
     public function test_login_normalizes_whitespace_and_letter_case_in_username(): void
     {
         $user = User::factory()->admin()->create([

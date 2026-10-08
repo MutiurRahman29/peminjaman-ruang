@@ -168,7 +168,7 @@
     }
 
     .nav-link-active {
-        @apply text-taupe;
+        @apply text-charcoal;
     }
 
     .status-badge {

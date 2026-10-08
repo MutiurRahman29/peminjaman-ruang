@@ -40,6 +40,7 @@ class FasilitasRequest extends FormRequest
             'jumlah' => ['required', 'integer', 'min:0'],
             'kondisi' => ['required', new Enum(KondisiFasilitas::class)],
             'keterangan' => ['nullable', 'string', 'max:1000'],
+            'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
 
@@ -62,6 +63,9 @@ class FasilitasRequest extends FormRequest
             'kondisi.enum' => 'Kondisi fasilitas tidak valid.',
             'keterangan.string' => 'Keterangan harus berupa teks.',
             'keterangan.max' => 'Keterangan maksimal 1000 karakter.',
+            'gambar.image' => 'File gambar harus berupa gambar yang valid.',
+            'gambar.mimes' => 'Gambar harus berformat JPG, PNG, atau WebP.',
+            'gambar.max' => 'Ukuran gambar maksimal 10 MB.',
         ];
     }
 }

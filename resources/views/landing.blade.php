@@ -161,7 +161,7 @@
             <div class="w-full">
                 <p class="text-center text-[10px] font-bold uppercase tracking-[0.18em] text-[#f7f5f0]/60">Siap mulai</p>
                 <h2 class="mx-auto mt-4 max-w-3xl text-3xl font-bold tracking-[-0.03em] text-[#f7f5f0] sm:text-4xl lg:text-5xl">Tentukan langkah berikutnya dan mulailah sekarang.</h2>
-                <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#f7f5f0]/65 sm:text-lg">Setiap kebutuhan yang kamu susun adalah awal dari proses yang lebih terencana. Ayo lanjutkan—langkah kecil hari ini bisa membuka kesempatan besar ke depan.</p>
+                <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#f7f5f0]/65 sm:text-lg">Setiap kebutuhan yang kamu susun adalah awal dari proses yang lebih terencana. Ayo lanjutkan-langkah kecil hari ini bisa membuka kesempatan besar ke depan.</p>
                 <div class="mt-8 flex flex-wrap justify-center gap-3">
                     <a href="{{ route('peminjam.ruangan.index') }}" class="action-button-primary shadow-[0_12px_28px_rgba(0,0,0,0.18)]">Lihat katalog <span aria-hidden="true">→</span></a>
                 </div>

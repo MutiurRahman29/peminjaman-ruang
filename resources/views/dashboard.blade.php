@@ -27,7 +27,7 @@
                 </div>
             </section>
 
-            @php($notifikasi = auth()->user()?->notifications()->latest()->limit(5)->get())
+            @php($notifikasi = auth()->user()?->unreadNotifications()->where('type', \App\Notifications\PeminjamanBaru::class)->latest()->limit(5)->get())
             @if ($notifikasi->isNotEmpty())
                 <section class="mt-10 border border-amber-700/20 bg-amber-700/10 p-5 sm:p-6" aria-labelledby="notifikasi-peminjaman-baru">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -44,7 +44,7 @@
                                     <p class="font-semibold text-charcoal">{{ $notifikasiItem->data['nama_pemohon'] }} mengajukan peminjaman</p>
                                     <p class="mt-1 text-sm text-muted">{{ $notifikasiItem->data['nama_ruangan'] }} · {{ $notifikasiItem->data['tanggal'] }}</p>
                                 </div>
-                                <a href="{{ $notifikasiItem->data['url'] }}" class="inline-flex font-semibold text-taupe hover:text-charcoal">Detail pengajuan →</a>
+                                <a href="{{ route('admin.notifications.open', $notifikasiItem->id) }}" class="inline-flex font-semibold text-taupe hover:text-charcoal">Detail pengajuan →</a>
                             </li>
                         @endforeach
                     </ul>

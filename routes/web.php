@@ -23,6 +23,10 @@ Route::middleware('auth')->group(function (): void {
     })->name('dashboard');
 });
 
+Route::middleware('guest')->get('/login', function () {
+    return redirect()->route('admin.login');
+})->name('login');
+
 Route::middleware(['admin.auth', 'role:admin'])->get('/admin', function () {
     return view('dashboard');
 })->name('admin.dashboard');
@@ -65,7 +69,9 @@ Route::middleware(['admin.auth', 'role:admin'])
     ->name('admin.')
     ->group(function (): void {
         Route::get('/peminjaman', [AdminPeminjamanController::class, 'index'])->name('peminjaman.index');
+        Route::get('/notifikasi/{notificationId}', [AdminPeminjamanController::class, 'openNotification'])->name('notifications.open');
         Route::get('/peminjaman/{peminjaman}', [AdminPeminjamanController::class, 'show'])->name('peminjaman.show');
+        Route::delete('/peminjaman/{peminjaman}', [AdminPeminjamanController::class, 'destroy'])->name('peminjaman.destroy');
         Route::patch('/peminjaman/{peminjaman}/approve', [AdminPeminjamanController::class, 'approve'])->name('peminjaman.approve');
         Route::patch('/peminjaman/{peminjaman}/reject', [AdminPeminjamanController::class, 'reject'])->name('peminjaman.reject');
         Route::resource('ruangan', AdminRuanganController::class)->except('show');

@@ -219,6 +219,14 @@
                     </form>
                 @endif
 
+                <form method="POST" action="{{ route('admin.peminjaman.destroy', $peminjaman) }}" onsubmit="return confirm('Hapus data peminjaman ini secara permanen?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-xl border border-rose-700/30 bg-rose-700/10 px-4 py-2 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-700/20">
+                        Hapus Peminjaman
+                    </button>
+                </form>
+
                 <button
                     onclick="window.print()"
                     class="inline-flex items-center gap-2 rounded-xl border border-border bg-ivory px-4 py-2 text-xs font-medium text-muted transition-all hover:border-border hover:bg-cream hover:text-charcoal"

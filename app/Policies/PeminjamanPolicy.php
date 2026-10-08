@@ -34,6 +34,14 @@ class PeminjamanPolicy
     }
 
     /**
+     * Determine whether the user can delete the loan.
+     */
+    public function delete(User $user, Peminjaman $peminjaman): bool
+    {
+        return $user->role === UserRole::Admin;
+    }
+
+    /**
      * Determine whether the user can complete the loan.
      */
     public function complete(User $user, Peminjaman $peminjaman): bool

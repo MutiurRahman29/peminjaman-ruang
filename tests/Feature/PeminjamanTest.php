@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\StatusPeminjaman;
 use App\Enums\StatusRuangan;
+use App\Enums\KondisiFasilitas;
+use App\Models\Fasilitas;
 use App\Models\Peminjaman;
 use App\Models\Ruangan;
 use App\Models\User;
@@ -97,6 +99,7 @@ class PeminjamanTest extends TestCase
         $tersedia = Ruangan::factory()->create([
             'nama_ruangan' => 'Ruang Tersedia',
             'status' => StatusRuangan::Tersedia,
+            'gambar' => 'ruangan/ruang-tersedia.jpg',
         ]);
         $digunakan = Ruangan::factory()->create([
             'nama_ruangan' => 'Ruang Digunakan',
@@ -106,10 +109,74 @@ class PeminjamanTest extends TestCase
         $this->get(route('peminjam.peminjaman.create'))
             ->assertOk()
             ->assertSee($tersedia->nama_ruangan)
+            ->assertSee('/storage/ruangan/ruang-tersedia.jpg', false)
             ->assertDontSee($digunakan->nama_ruangan)
             ->assertSee('Nama pemohon')
             ->assertSee('Email pemohon')
             ->assertSee('Nomor WhatsApp');
+    }
+
+    public function test_request_form_displays_the_uploaded_facility_image(): void
+    {
+        $fasilitas = Fasilitas::factory()->create([
+            'nama_fasilitas' => 'Kamera Dokumentasi',
+            'kondisi' => KondisiFasilitas::Baik,
+            'jumlah' => 1,
+            'gambar' => 'fasilitas/kamera-dokumentasi.jpg',
+        ]);
+
+        $this->get(route('peminjam.peminjaman.create'))
+            ->assertOk()
+            ->assertViewHas('fasilitas', fn ($items): bool => $items->contains(
+                fn (Fasilitas $item): bool => $item->id_fasilitas === $fasilitas->id_fasilitas
+                    && $item->gambar === 'fasilitas/kamera-dokumentasi.jpg'
+                    && str_ends_with($item->gambar_url, '/fasilitas/kamera-dokumentasi.jpg'),
+            ))
+            ->assertSee($fasilitas->nama_fasilitas);
+    }
+
+    public function test_request_form_caps_facility_quantity_at_available_stock(): void
+    {
+        $fasilitas = Fasilitas::factory()->create([
+            'nama_fasilitas' => 'Mikrofon',
+            'kondisi' => KondisiFasilitas::Baik,
+            'jumlah' => 3,
+        ]);
+
+        $response = $this->get(route('peminjam.peminjaman.create'));
+
+        $response
+            ->assertOk()
+            ->assertSee('maks. 3 unit')
+            ->assertSee('Mikrofon');
+    }
+
+    public function test_request_rejects_facility_quantity_above_stock_remaining_for_schedule(): void
+    {
+        $ruanganExisting = Ruangan::factory()->create();
+        $ruanganRequest = Ruangan::factory()->create();
+        $fasilitas = Fasilitas::factory()->create([
+            'nama_fasilitas' => 'Speaker',
+            'kondisi' => KondisiFasilitas::Baik,
+            'jumlah' => 5,
+        ]);
+        $approvedLoan = $this->createExistingLoan($ruanganExisting, StatusPeminjaman::Disetujui);
+        $approvedLoan->detailPeminjaman()->create([
+            'id_fasilitas' => $fasilitas->id_fasilitas,
+            'jumlah' => 4,
+        ]);
+
+        $this->actingAs(User::factory()->peminjam()->create())
+            ->from(route('peminjam.peminjaman.create'))
+            ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruanganRequest, [
+                'jam_mulai' => '09:00',
+                'jam_selesai' => '10:00',
+                'fasilitas' => [$fasilitas->id_fasilitas => 2],
+                'konfirmasi' => '1',
+            ]))
+            ->assertSessionHasErrors([
+                'fasilitas.'.$fasilitas->id_fasilitas => 'Stok Speaker pada jadwal tersebut hanya tersedia 1.',
+            ]);
     }
 
     public function test_valid_request_can_be_created_without_an_account_and_is_pending(): void

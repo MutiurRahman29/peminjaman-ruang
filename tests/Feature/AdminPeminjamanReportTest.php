@@ -7,6 +7,7 @@ use App\Models\Fasilitas;
 use App\Models\Peminjaman;
 use App\Models\Ruangan;
 use App\Models\User;
+use App\Notifications\PeminjamanBaru;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -21,6 +22,7 @@ class AdminPeminjamanReportTest extends TestCase
 
         $this->get(route('admin.peminjaman.index'))->assertRedirect(route('admin.login'));
         $this->get(route('admin.peminjaman.show', $peminjaman))->assertRedirect(route('admin.login'));
+        $this->delete(route('admin.peminjaman.destroy', $peminjaman))->assertRedirect(route('admin.login'));
     }
 
     public function test_staff_and_borrower_are_forbidden_from_admin_report_routes(): void
@@ -33,6 +35,9 @@ class AdminPeminjamanReportTest extends TestCase
                 ->assertForbidden();
 
             $this->get(route('admin.peminjaman.show', $peminjaman))
+                ->assertForbidden();
+
+            $this->delete(route('admin.peminjaman.destroy', $peminjaman))
                 ->assertForbidden();
         }
     }
@@ -83,6 +88,7 @@ class AdminPeminjamanReportTest extends TestCase
             ->assertSeeInOrder([$terbaru->keperluan, $lama->keperluan])
             ->assertSee('Setujui')
             ->assertSee('Tolak')
+            ->assertSee('Hapus')
             ->assertSee($terbaru->email_pemohon)
             ->assertSee($terbaru->whatsapp_pemohon)
             ->assertDontSee('Tandai Selesai');
@@ -92,11 +98,76 @@ class AdminPeminjamanReportTest extends TestCase
             ->assertSee('Proyektor: 2')
             ->assertSee('Setujui')
             ->assertSee('Tolak')
+            ->assertSee('Hapus Peminjaman')
             ->assertDontSee('Tandai Selesai');
 
         $this->get(route('admin.peminjaman.show', $lama))
             ->assertOk()
             ->assertSee('Tidak ada fasilitas tambahan.');
+    }
+
+    public function test_opening_a_new_loan_notification_marks_it_read_and_hides_it_from_dashboard(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $peminjaman = $this->createLoan(keperluan: 'Pengajuan notifikasi dibaca');
+        $peminjaman->update(['nama_pemohon' => 'Peminjam Notifikasi']);
+        $admin->notify(new PeminjamanBaru($peminjaman, $peminjaman->ruangan));
+        $notification = $admin->unreadNotifications()->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertSee('Peminjam Notifikasi mengajukan peminjaman');
+
+        $this->actingAs($admin)
+            ->get(route('admin.notifications.open', $notification->id))
+            ->assertRedirect(route('admin.peminjaman.show', $peminjaman));
+
+        $this->assertNotNull($notification->fresh()->read_at);
+
+        $this->get(route('dashboard'))
+            ->assertDontSee('Peminjam Notifikasi mengajukan peminjaman');
+    }
+
+    public function test_admin_cannot_open_another_admins_notification(): void
+    {
+        $owner = User::factory()->admin()->create();
+        $peminjaman = $this->createLoan();
+        $owner->notify(new PeminjamanBaru($peminjaman, $peminjaman->ruangan));
+        $notification = $owner->unreadNotifications()->firstOrFail();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.notifications.open', $notification->id))
+            ->assertNotFound();
+    }
+
+    public function test_opening_a_notification_for_a_deleted_loan_removes_it_and_returns_to_report(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $peminjaman = $this->createLoan();
+        $admin->notify(new PeminjamanBaru($peminjaman, $peminjaman->ruangan));
+        $notification = $admin->unreadNotifications()->firstOrFail();
+        $peminjaman->delete();
+
+        $this->actingAs($admin)
+            ->get(route('admin.notifications.open', $notification->id))
+            ->assertRedirect(route('admin.peminjaman.index'))
+            ->assertSessionHas('error', 'Pengajuan ini sudah tidak tersedia.');
+
+        $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
+    }
+
+    public function test_opening_a_loan_detail_directly_marks_its_notifications_as_read(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $peminjaman = $this->createLoan();
+        $admin->notify(new PeminjamanBaru($peminjaman, $peminjaman->ruangan));
+        $notification = $admin->unreadNotifications()->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.peminjaman.show', $peminjaman))
+            ->assertOk();
+
+        $this->assertNotNull($notification->fresh()->read_at);
     }
 
     public function test_admin_can_approve_and_reject_pending_loans(): void
@@ -124,6 +195,24 @@ class AdminPeminjamanReportTest extends TestCase
 
         $this->assertSame(StatusPeminjaman::Disetujui, Peminjaman::findOrFail($approved->id_peminjaman)->status);
         $this->assertSame(StatusPeminjaman::Ditolak, Peminjaman::findOrFail($rejected->id_peminjaman)->status);
+    }
+
+    public function test_admin_can_delete_a_loan_and_its_facility_details(): void
+    {
+        $fasilitas = Fasilitas::factory()->create();
+        $peminjaman = $this->createLoan(fasilitas: [$fasilitas->id_fasilitas => 2]);
+        $admin = User::factory()->admin()->create();
+        $admin->notify(new PeminjamanBaru($peminjaman, $peminjaman->ruangan));
+        $notification = $admin->notifications()->firstOrFail();
+
+        $this->actingAs($admin)
+            ->delete('/admin/peminjaman/'.$peminjaman->id_peminjaman)
+            ->assertRedirect(route('admin.peminjaman.index'))
+            ->assertSessionHas('success', 'Data peminjaman berhasil dihapus.');
+
+        $this->assertDatabaseMissing('peminjaman', ['id_peminjaman' => $peminjaman->id_peminjaman]);
+        $this->assertDatabaseMissing('detail_peminjaman', ['id_peminjaman' => $peminjaman->id_peminjaman]);
+        $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
     }
 
     public function test_each_filter_and_a_combined_filter_limit_the_report(): void

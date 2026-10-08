@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\RuanganRequest;
 use App\Models\Ruangan;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class RuanganController extends Controller
@@ -37,7 +38,13 @@ class RuanganController extends Controller
      */
     public function store(RuanganRequest $request): RedirectResponse
     {
-        Ruangan::query()->create($request->validated());
+        $validated = $request->validated();
+
+        if ($request->hasFile('gambar')) {
+            $validated['gambar'] = $request->file('gambar')->storePublicly('ruangan', 'public');
+        }
+
+        Ruangan::query()->create($validated);
 
         return redirect()
             ->route('admin.ruangan.index')
@@ -60,7 +67,18 @@ class RuanganController extends Controller
      */
     public function update(RuanganRequest $request, Ruangan $ruangan): RedirectResponse
     {
-        $ruangan->update($request->validated());
+        $validated = $request->validated();
+        $gambarLama = $ruangan->gambar;
+
+        if ($request->hasFile('gambar')) {
+            $validated['gambar'] = $request->file('gambar')->storePublicly('ruangan', 'public');
+        }
+
+        $ruangan->update($validated);
+
+        if ($request->hasFile('gambar') && $gambarLama) {
+            Storage::disk('public')->delete($gambarLama);
+        }
 
         return redirect()
             ->route('admin.ruangan.index')
@@ -80,6 +98,10 @@ class RuanganController extends Controller
 
         try {
             $ruangan->delete();
+
+            if ($ruangan->gambar) {
+                Storage::disk('public')->delete($ruangan->gambar);
+            }
         } catch (QueryException $exception) {
             if ((string) $exception->getCode() !== '23000') {
                 throw $exception;

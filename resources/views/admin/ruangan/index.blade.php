@@ -40,10 +40,19 @@
             @else
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-left text-sm" aria-label="Daftar Ruangan">
-                        <thead class="border-b border-border bg-cream text-xs font-semibold uppercase tracking-[0.18em] text-muted"><tr><th class="px-6 py-4">Nama Ruangan</th><th class="px-6 py-4">Kapasitas</th><th class="px-6 py-4">Lokasi</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">Aksi</th></tr></thead>
+                        <thead class="border-b border-border bg-cream text-xs font-semibold uppercase tracking-[0.18em] text-muted"><tr><th class="px-6 py-4">Thumbnail</th><th class="px-6 py-4">Nama Ruangan</th><th class="px-6 py-4">Kapasitas</th><th class="px-6 py-4">Lokasi</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">Aksi</th></tr></thead>
                         <tbody class="divide-y divide-border/30">
                             @foreach ($ruangan as $item)
                                 <tr class="transition-colors hover:bg-cream">
+                                    <td class="px-6 py-4">
+                                        @if ($item->gambar_url)
+                                            <img src="{{ $item->gambar_url }}" alt="Foto {{ $item->nama_ruangan }}" class="h-12 w-16 rounded-lg border border-border object-cover">
+                                        @else
+                                            <div class="grid h-12 w-16 place-items-center rounded-lg bg-cream text-muted" aria-label="Belum ada thumbnail">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5l5.25-5.25a2.25 2.25 0 013.182 0L16.5 16.5m-2.25-2.25l1.318-1.318a2.25 2.25 0 013.182 0L21 15.75M3 6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 17.25V6.75z" /></svg>
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 font-semibold text-charcoal">{{ $item->nama_ruangan }}</td>
                                     <td class="px-6 py-4 text-muted">{{ $item->kapasitas }} orang</td>
                                     <td class="px-6 py-4 text-muted">{{ $item->lokasi }}</td>

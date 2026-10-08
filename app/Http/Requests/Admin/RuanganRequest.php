@@ -39,6 +39,7 @@ class RuanganRequest extends FormRequest
             ],
             'kapasitas' => ['required', 'integer', 'min:1'],
             'lokasi' => ['required', 'string', 'max:150'],
+            'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'status' => ['required', new Enum(StatusRuangan::class)],
         ];
     }
@@ -61,6 +62,9 @@ class RuanganRequest extends FormRequest
             'lokasi.required' => 'Lokasi wajib diisi.',
             'lokasi.string' => 'Lokasi harus berupa teks.',
             'lokasi.max' => 'Lokasi maksimal 150 karakter.',
+            'gambar.image' => 'File gambar harus berupa gambar yang valid.',
+            'gambar.mimes' => 'Gambar harus berformat JPG, PNG, atau WebP.',
+            'gambar.max' => 'Ukuran gambar maksimal 10 MB.',
             'status.required' => 'Status ruangan wajib dipilih.',
             'status.enum' => 'Status ruangan tidak valid.',
         ];

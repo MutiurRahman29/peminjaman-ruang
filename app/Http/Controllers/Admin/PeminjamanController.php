@@ -8,9 +8,11 @@ use App\Http\Requests\Admin\FilterPeminjamanRequest;
 use App\Models\Peminjaman;
 use App\Models\Ruangan;
 use App\Models\User;
+use App\Notifications\PeminjamanBaru;
 use App\Services\LoanApprovalService;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -56,13 +58,44 @@ class PeminjamanController extends Controller
     /**
      * Display a read-only loan detail for administrators.
      */
-    public function show(Peminjaman $peminjaman): View
+    public function show(Request $request, Peminjaman $peminjaman): View
     {
         Gate::authorize('view', $peminjaman);
+
+        $request->user()->unreadNotifications()
+            ->where('type', PeminjamanBaru::class)
+            ->where('data->id_peminjaman', $peminjaman->id_peminjaman)
+            ->update(['read_at' => now()]);
 
         $peminjaman->load(['user', 'ruangan', 'detailPeminjaman.fasilitas']);
 
         return view('admin.peminjaman.show', compact('peminjaman'));
+    }
+
+    /**
+     * Open an administrator's loan notification and mark it as read.
+     */
+    public function openNotification(Request $request, string $notificationId): RedirectResponse
+    {
+        $notification = $request->user()
+            ->notifications()
+            ->whereKey($notificationId)
+            ->where('type', PeminjamanBaru::class)
+            ->firstOrFail();
+
+        $peminjaman = Peminjaman::query()->find($notification->data['id_peminjaman'] ?? null);
+
+        if (! $peminjaman) {
+            $notification->delete();
+
+            return redirect()
+                ->route('admin.peminjaman.index')
+                ->with('error', 'Pengajuan ini sudah tidak tersedia.');
+        }
+
+        $notification->markAsRead();
+
+        return redirect()->route('admin.peminjaman.show', $peminjaman);
     }
 
     /**
@@ -99,5 +132,24 @@ class PeminjamanController extends Controller
         return redirect()
             ->route('admin.peminjaman.show', $peminjaman->id_peminjaman)
             ->with('success', 'Pengajuan peminjaman ditolak.');
+    }
+
+    /**
+     * Delete a loan and its associated facility details.
+     */
+    public function destroy(Peminjaman $peminjaman): RedirectResponse
+    {
+        Gate::authorize('delete', $peminjaman);
+
+        $peminjaman->delete();
+
+        DB::table('notifications')
+            ->where('type', PeminjamanBaru::class)
+            ->where('data->id_peminjaman', $peminjaman->id_peminjaman)
+            ->delete();
+
+        return redirect()
+            ->route('admin.peminjaman.index')
+            ->with('success', 'Data peminjaman berhasil dihapus.');
     }
 }

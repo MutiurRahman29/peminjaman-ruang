@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\FasilitasRequest;
 use App\Models\Fasilitas;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class FasilitasController extends Controller
@@ -60,7 +61,12 @@ class FasilitasController extends Controller
      */
     public function update(FasilitasRequest $request, Fasilitas $fasilitas): RedirectResponse
     {
+        $gambarLama = $fasilitas->gambar;
         $fasilitas->update($this->normalizedData($request));
+
+        if ($request->hasFile('gambar') && $gambarLama) {
+            Storage::disk('public')->delete($gambarLama);
+        }
 
         return redirect()
             ->route('admin.fasilitas.index')
@@ -78,6 +84,10 @@ class FasilitasController extends Controller
 
         try {
             $fasilitas->delete();
+
+            if ($fasilitas->gambar) {
+                Storage::disk('public')->delete($fasilitas->gambar);
+            }
         } catch (QueryException $exception) {
             if ((string) $exception->getCode() !== '23000') {
                 throw $exception;
@@ -98,6 +108,10 @@ class FasilitasController extends Controller
     {
         $data = $request->validated();
         $data['keterangan'] = filled($data['keterangan'] ?? null) ? $data['keterangan'] : null;
+
+        if ($request->hasFile('gambar')) {
+            $data['gambar'] = $request->file('gambar')->storePublicly('fasilitas', 'public');
+        }
 
         return $data;
     }

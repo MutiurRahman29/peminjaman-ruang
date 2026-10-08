@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\StatusRuangan;
 use Database\Factories\RuanganFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Ruangan extends Model
 {
@@ -24,8 +26,21 @@ class Ruangan extends Model
         'nama_ruangan',
         'kapasitas',
         'lokasi',
+        'gambar',
         'status',
     ];
+
+    /**
+     * Get the public URL for the room image.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function gambarUrl(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->gambar
+            ? Storage::disk('public')->url($this->gambar)
+            : null);
+    }
 
     /**
      * Get the loans for the room.

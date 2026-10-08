@@ -185,6 +185,12 @@
             </form>
         </section>
 
+        @if (session('error'))
+            <div class="mb-6 border border-rose-700/20 bg-rose-700/10 p-4 text-sm text-rose-700" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
+
         {{-- Main Table Container --}}
         <section class="glass-card overflow-hidden rounded-[1.75rem]">
             @if ($peminjaman->isEmpty())
@@ -270,6 +276,11 @@
                                         @else
                                             <a href="{{ route('admin.peminjaman.show', $item) }}" class="rounded-lg border border-border bg-ivory px-3 py-1.5 text-xs font-semibold text-charcoal transition-colors hover:border-taupe/40 hover:bg-taupe/10">Detail</a>
                                         @endif
+                                        <form method="POST" action="{{ route('admin.peminjaman.destroy', $item) }}" class="inline-block" onsubmit="return confirm('Hapus data peminjaman ini secara permanen?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded-lg border border-rose-700/30 bg-rose-700/10 px-3 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-700/20">Hapus</button>
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach

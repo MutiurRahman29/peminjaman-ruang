@@ -66,7 +66,14 @@
                                         <span class="sr-only">Pilih {{ $item->nama_ruangan }}</span>
                                     </label>
                                     <div class="relative aspect-16/10 overflow-hidden bg-cream">
-                                        <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&amp;fit=crop&amp;w=1200&amp;q=80" alt="Foto interior {{ $item->nama_ruangan }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" width="720" height="440" loading="lazy">
+                                        @if ($item->gambar_url)
+                                            <img src="{{ $item->gambar_url }}" alt="Foto {{ $item->nama_ruangan }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" width="720" height="440" loading="lazy">
+                                        @else
+                                            <div class="flex h-full flex-col items-center justify-center gap-2 text-muted" aria-label="Foto ruangan belum tersedia">
+                                                <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5l5.25-5.25a2.25 2.25 0 013.182 0L16.5 16.5m-2.25-2.25l1.318-1.318a2.25 2.25 0 013.182 0L21 15.75M3 6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 17.25V6.75z" /></svg>
+                                                <span class="text-xs font-medium">Foto belum tersedia</span>
+                                            </div>
+                                        @endif
                                         <span class="absolute left-3 top-3 rounded-full bg-ivory/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-charcoal shadow-sm backdrop-blur">Tersedia</span>
                                     </div>
                                     <div class="p-4">
@@ -161,13 +168,17 @@
                             @forelse ($fasilitas as $item)
                                 <div class="flex items-center gap-4 rounded-2xl border border-border bg-ivory p-3 transition hover:border-taupe/60">
                                     <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-cream">
-                                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&amp;fit=crop&amp;w=240&amp;q=80" alt="Foto {{ $item->nama_fasilitas }}" class="h-full w-full object-cover" width="48" height="48" loading="lazy">
+                                        @if ($item->gambar_url)
+                                            <img src="{{ $item->gambar_url }}" alt="Foto {{ $item->nama_fasilitas }}" class="h-full w-full object-cover" width="48" height="48" loading="lazy">
+                                        @else
+                                            <svg class="h-6 w-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-label="Foto fasilitas belum tersedia"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>
+                                        @endif
                                     </div>
                                     <div class="min-w-0 flex-1">
                                         <label for="fasilitas_{{ $item->id_fasilitas }}" class="block truncate text-sm font-semibold text-charcoal">{{ $item->nama_fasilitas }}</label>
-                                        <p class="mt-0.5 text-[11px] text-muted">{{ $item->jumlah }} unit tersedia</p>
+                                        <p class="mt-0.5 text-[11px] text-muted">{{ $item->jumlah }} unit tersedia · maks. {{ $item->jumlah }} unit</p>
                                     </div>
-                                    <input id="fasilitas_{{ $item->id_fasilitas }}" name="fasilitas[{{ $item->id_fasilitas }}]" type="number" min="1" max="{{ $item->jumlah }}" value="{{ old('fasilitas.'.$item->id_fasilitas) }}" placeholder="0" class="w-20 rounded-xl border border-border bg-ivory px-3 py-2 text-center text-sm text-charcoal focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20">
+                                    <input id="fasilitas_{{ $item->id_fasilitas }}" name="fasilitas[{{ $item->id_fasilitas }}]" type="number" min="1" max="{{ $item->jumlah }}" value="{{ old('fasilitas.'.$item->id_fasilitas) }}" placeholder="0" x-on:input="$el.value = $el.value && Number($el.value) > Number($el.max) ? $el.max : $el.value" aria-label="Jumlah {{ $item->nama_fasilitas }}, maksimal {{ $item->jumlah }} unit" class="w-20 rounded-xl border border-border bg-ivory px-3 py-2 text-center text-sm text-charcoal focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20">
                                 </div>
                                 @error('fasilitas.'.$item->id_fasilitas)
                                     <p class="-mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>
