@@ -36,12 +36,12 @@
 
     html {
         scroll-behavior: smooth;
-        scroll-padding-top: 0rem;
+        /* scroll-padding-top: 0rem; */
     }
 
-    section[id] {
+    /* section[id] {
         scroll-margin-top: 0rem;
-    }
+    } */
 
     body {
         min-width: 320px;
@@ -179,21 +179,6 @@
         content: "";
         @apply h-1.5 w-1.5 rounded-full;
     }
-}
-
-.mobile-menu {
-    transform-origin: top center;
-}
-
-.paper-sheet {
-    position: fixed;
-    z-index: 60;
-    pointer-events: none;
-    border: 1px solid rgba(41, 39, 35, 0.18);
-    border-radius: 0.25rem;
-    background: linear-gradient(135deg, #f7f5f0 0%, #eae6de 100%);
-    box-shadow: 0 8px 24px rgba(41, 39, 35, 0.18);
-    transform-origin: center;
 }
 
 @utility text-balance {

@@ -69,9 +69,8 @@
                     x-on:click="open = !open"
                     x-bind:aria-expanded="open"
                     x-bind:aria-label="open ? 'Tutup menu navigasi' : 'Buka menu navigasi'"
-                    x-bind:class="open ? 'rotate-180 scale-110 bg-ivory' : ''"
                 >
-                    <svg class="h-5 w-5 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" x-show="!open"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" x-show="open"/>
                     </svg>
@@ -79,7 +78,7 @@
             </div>
         </div>
 
-        <nav id="mobile-navigation" x-show="open" x-transition:enter="mobile-menu-enter" x-transition:leave="mobile-menu-leave" @click.outside="open = false" class="mobile-menu border-t border-border bg-ivory py-3 shadow-[0_12px_30px_rgba(41,39,35,0.06)] backdrop-blur-xl lg:hidden" aria-label="Navigasi mobile">
+        <nav id="mobile-navigation" x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" @click.outside="open = false" class="border-t border-border bg-ivory py-3 shadow-[0_12px_30px_rgba(41,39,35,0.06)] backdrop-blur-xl lg:hidden" aria-label="Navigasi mobile">
             <div class="mx-auto flex max-w-7xl flex-col gap-1 px-4 sm:px-6">
                 @auth
                     <a href="{{ route('dashboard') }}" x-on:click="open = false" class="rounded-xl px-4 py-3 text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-cream text-charcoal' : 'text-muted hover:bg-cream hover:text-charcoal' }}">Dashboard</a>
