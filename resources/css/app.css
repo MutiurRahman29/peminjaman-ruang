@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Mempertahankan source bawaan Laravel */
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -9,6 +8,194 @@
         "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif,
         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
         "Noto Color Emoji";
-    --color-gray-650: oklch(0.41 0.032 258.3);
-    --color-gray-750: oklch(0.326 0.027 259.5);
+
+    --color-ivory: #f7f5f0;
+    --color-cream: #eae6de;
+    --color-charcoal: #292723;
+    --color-muted: #54504a;
+    --color-taupe: #725b4d;
+    --color-border: #dcd6cc;
+    --color-success: #7c8d7a;
+    --color-warning: #a98a5b;
+    --color-error: #9a6a5d;
+    --color-info: #708098;
+}
+
+@layer base {
+    :root {
+        color-scheme: light;
+        --page-bg: #f7f5f0;
+        --surface: #eae6de;
+        --surface-strong: #f2efe9;
+        --line: #dcd6cc;
+    }
+
+    * {
+        @apply box-border;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 0rem;
+    }
+
+    section[id] {
+        scroll-margin-top: 0rem;
+    }
+
+    body {
+        min-width: 320px;
+        background: var(--page-bg);
+        color: #292723;
+        scrollbar-color: #b9a99d #f2efe9;
+        scrollbar-width: thin;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f2efe9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border: 2px solid #f2efe9;
+        border-radius: 9999px;
+        background: #b9a99d;
+        transition: background-color 180ms ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #9a8170;
+    }
+
+    ::selection {
+        background: rgba(154, 129, 112, 0.22);
+        color: #292723;
+    }
+
+    :focus-visible {
+        outline: 2px solid #9a8170;
+        outline-offset: 3px;
+    }
+}
+
+@layer components {
+    .site-shell {
+        background: #f7f5f0;
+    }
+
+    .page-section {
+        @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    }
+
+    .section-eyebrow {
+        @apply mb-4 block text-[11px] font-bold uppercase tracking-[0.18em] text-taupe;
+    }
+
+    .section-heading {
+        @apply text-balance text-3xl font-bold leading-tight tracking-[-0.03em] text-charcoal sm:text-5xl;
+    }
+
+    .section-copy {
+        @apply mt-5 max-w-2xl text-base leading-7 text-muted sm:text-lg;
+    }
+
+    .surface-panel {
+        @apply border border-border bg-ivory;
+    }
+
+    .action-button {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-5 py-2.5 text-sm font-semibold text-charcoal transition-colors duration-200 focus-visible:outline-none;
+    }
+
+    .action-button-primary {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-transparent bg-charcoal px-5 py-2.5 text-sm font-semibold text-ivory transition-colors duration-200 hover:brightness-110 focus-visible:outline-none;
+    }
+
+    .action-button-secondary {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-transparent px-5 py-2.5 text-sm font-semibold text-charcoal transition-colors duration-200 hover:bg-cream focus-visible:outline-none;
+    }
+
+    .action-button-quiet {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-taupe transition-colors duration-200 hover:bg-cream hover:text-charcoal focus-visible:outline-none;
+    }
+
+    /* Alias untuk kompatibilitas view lama */
+    .primary-button {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-transparent bg-charcoal px-5 py-2.5 text-sm font-semibold text-ivory transition-colors duration-200 hover:brightness-110 focus-visible:outline-none;
+    }
+
+    .soft-button {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-cream px-5 py-2.5 text-sm font-semibold text-charcoal transition-colors duration-200 hover:bg-border focus-visible:outline-none;
+    }
+
+    .glass-card {
+        @apply border border-border/10 bg-ivory shadow-sm;
+    }
+
+    .eyebrow {
+        @apply mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-taupe;
+    }
+
+    .section-title {
+        @apply text-2xl font-bold tracking-tight text-charcoal sm:text-3xl;
+    }
+
+    .nav-link {
+        @apply relative rounded-lg px-3 py-2 text-sm font-medium text-charcoal transition-colors duration-200 ease-out hover:text-taupe;
+    }
+
+    .nav-link::before {
+        content: "";
+        position: absolute;
+        right: 0.75rem;
+        bottom: 0.45rem;
+        left: 0.75rem;
+        height: 1px;
+        border-radius: 9999px;
+        background: #9a8170;
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 200ms ease-out;
+    }
+
+    .nav-link:hover::before,
+    .nav-link-active::before {
+        transform: scaleX(1);
+    }
+
+    .nav-link-active {
+        @apply text-taupe;
+    }
+
+    .status-badge {
+        @apply inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em];
+    }
+
+    .status-badge::before {
+        content: "";
+        @apply h-1.5 w-1.5 rounded-full;
+    }
+}
+
+.mobile-menu {
+    transform-origin: top center;
+}
+
+.paper-sheet {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    border: 1px solid rgba(41, 39, 35, 0.18);
+    border-radius: 0.25rem;
+    background: linear-gradient(135deg, #f7f5f0 0%, #eae6de 100%);
+    box-shadow: 0 8px 24px rgba(41, 39, 35, 0.18);
+    transform-origin: center;
+}
+
+@utility text-balance {
+    text-wrap: balance;
 }

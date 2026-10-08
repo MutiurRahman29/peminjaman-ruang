@@ -1,161 +1,85 @@
 @extends('layouts.app')
-
 @section('title', 'Tambah Ruangan')
-
 @section('content')
-    <div class="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
-
-        {{-- Top Navigation & Header --}}
-        <div class="mb-8 animate-fade-up animate-duration-[600ms] animate-ease-out">
-            <nav class="mb-3 flex items-center gap-2 text-xs font-medium text-gray-400">
-                <a href="{{ route('admin.ruangan.index') }}" class="transition-colors hover:text-amber-400">Dashboard / Ruangan</a>
-                <span>/</span>
-                <span class="text-gray-200">Tambah Ruangan</span>
-            </nav>
-
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                        Tambah Ruangan Baru
-                    </h1>
-                    <p class="mt-1 text-sm text-gray-400">
-                        Isi formulir berikut untuk merencanakan dan menambah ruangan baru.
-                    </p>
-                </div>
-
-            </div>
+<div class="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <nav class="mb-6 flex items-center gap-2 text-xs font-medium text-muted">
+        <a href="{{ route('dashboard') }}" class="hover:text-taupe">Dashboard</a>
+        <span>/</span>
+        <a href="{{ route('admin.ruangan.index') }}" class="hover:text-taupe">Kelola Ruangan</a>
+        <span>/</span>
+        <span class="text-charcoal">Tambah Ruangan</span>
+    </nav>
+    <section class="glass-card rounded-[1.75rem] p-6 sm:p-8">
+        <div class="mb-8">
+            <span class="eyebrow"><span class="h-2 w-2 rounded-full bg-charcoal"></span>Data baru</span>
+            <h1 class="section-title text-3xl sm:text-4xl">Tambah Ruangan Baru</h1>
+            <p class="mt-3 text-sm leading-6 text-muted">Lengkapi detail ruangan sebelum data dapat digunakan untuk peminjaman.</p>
         </div>
-
-        {{-- Form Card --}}
-        <div class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-xl sm:p-8 animate-fade-up animate-duration-[800ms] animate-delay-100 animate-ease-out">
-            <form method="POST" action="{{ route('admin.ruangan.store') }}" class="space-y-6">
-                @csrf
-
-                {{-- Nama Ruangan --}}
-                <div>
-                    <label for="nama_ruangan" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-300">
-                        Nama Ruangan <span class="text-rose-400">*</span>
-                    </label>
-                    <input
-                        id="nama_ruangan"
-                        name="nama_ruangan"
-                        type="text"
-                        value="{{ old('nama_ruangan') }}"
-                        maxlength="100"
-                        required
-                        placeholder="Contoh: Aula Utama, Lab Komputer 1"
-                        class="w-full rounded-xl border border-gray-800 bg-gray-950/60 px-4 py-3 text-sm text-white placeholder-gray-500 transition focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    >
-                    @error('nama_ruangan')
-                        <p class="mt-1.5 flex items-center gap-1 text-xs text-rose-400">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                            </svg>
-                            <span>{{ $message }}</span>
-                        </p>
-                    @enderror
-                </div>
-
-                {{-- Kapasitas --}}
-                <div>
-                    <label for="kapasitas" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-300">
-                        Kapasitas Orang <span class="text-rose-400">*</span>
-                    </label>
-                    <input
-                        id="kapasitas"
-                        name="kapasitas"
-                        type="number"
-                        value="{{ old('kapasitas') }}"
-                        min="1"
-                        required
-                        placeholder="Contoh: 50"
-                        class="w-full rounded-xl border border-gray-800 bg-gray-950/60 px-4 py-3 text-sm text-white placeholder-gray-500 transition focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    >
-                    @error('kapasitas')
-                        <p class="mt-1.5 flex items-center gap-1 text-xs text-rose-400">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                            </svg>
-                            <span>{{ $message }}</span>
-                        </p>
-                    @enderror
-                </div>
-
-                {{-- Lokasi --}}
-                <div>
-                    <label for="lokasi" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-300">
-                        Lokasi / Gedung <span class="text-rose-400">*</span>
-                    </label>
-                    <input
-                        id="lokasi"
-                        name="lokasi"
-                        type="text"
-                        value="{{ old('lokasi') }}"
-                        maxlength="150"
-                        required
-                        placeholder="Contoh: Gedung A Lantai 2"
-                        class="w-full rounded-xl border border-gray-800 bg-gray-950/60 px-4 py-3 text-sm text-white placeholder-gray-500 transition focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    >
-                    @error('lokasi')
-                        <p class="mt-1.5 flex items-center gap-1 text-xs text-rose-400">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                            </svg>
-                            <span>{{ $message }}</span>
-                        </p>
-                    @enderror
-                </div>
-
-                {{-- Status --}}
-                <div>
-                    <label for="status" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-300">
-                        Status Operational <span class="text-rose-400">*</span>
-                    </label>
-                    <select
-                        id="status"
-                        name="status"
-                        required
-                        class="w-full rounded-xl border border-gray-800 bg-gray-950/60 px-4 py-3 text-sm text-white transition focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    >
-                        <option value="" disabled selected class="bg-gray-900 text-gray-500">Pilih status ruangan</option>
-
-                        @foreach ($statusOptions as $status)
-                            <option
-                                value="{{ $status->value }}"
-                                class="bg-gray-900 text-white"
-                                @selected(old('status') === $status->value)
-                            >
-                                {{ $status->value }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('status')
-                        <p class="mt-1.5 flex items-center gap-1 text-xs text-rose-400">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                            </svg>
-                            <span>{{ $message }}</span>
-                        </p>
-                    @enderror
-                </div>
-
-                {{-- Action Buttons --}}
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
-                    <a href="{{ route('admin.ruangan.index') }}"
-                        class="rounded-xl border border-gray-800 bg-gray-800/50 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-all hover:bg-gray-800 hover:text-white">
-                        Batal
-                    </a>
-                    <button type="submit"
-                        class="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-gray-950 shadow-md transition-all hover:bg-amber-400 hover:scale-[0.98] active:scale-95">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        <form method="POST" action="{{ route('admin.ruangan.store') }}" class="space-y-6">
+            @csrf
+            <div>
+                <label for="nama_ruangan" class="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Nama Ruangan <span class="text-rose-700">*</span></label>
+                <input id="nama_ruangan" name="nama_ruangan" type="text" value="{{ old('nama_ruangan') }}" maxlength="100" required placeholder="Contoh: Aula Utama" class="w-full rounded-2xl border border-border bg-ivory px-4 py-3 text-sm text-charcoal placeholder-muted transition focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20 @error('nama_ruangan') border-rose-700/50 focus:border-rose-700 focus:ring-rose-700/20 @enderror">
+                @error('nama_ruangan')
+                    <div class="mt-2 flex items-center gap-1.5 text-xs text-rose-700">
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                         </svg>
-                        <span>Simpan Ruangan</span>
-                    </button>
-                </div>
-
-            </form>
-        </div>
-
-    </div>
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
+            </div>
+            <div>
+                <label for="kapasitas" class="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Kapasitas <span class="text-rose-700">*</span></label>
+                <input id="kapasitas" name="kapasitas" type="number" value="{{ old('kapasitas') }}" min="1" required placeholder="Contoh: 50" class="w-full rounded-2xl border border-border bg-ivory px-4 py-3 text-sm text-charcoal placeholder-muted transition focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20 @error('kapasitas') border-rose-700/50 focus:border-rose-700 focus:ring-rose-700/20 @enderror">
+                @error('kapasitas')
+                    <div class="mt-2 flex items-center gap-1.5 text-xs text-rose-700">
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                        </svg>
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
+            </div>
+            <div>
+                <label for="lokasi" class="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Lokasi / Gedung <span class="text-rose-700">*</span></label>
+                <input id="lokasi" name="lokasi" type="text" value="{{ old('lokasi') }}" maxlength="150" required placeholder="Contoh: Gedung A Lantai 2" class="w-full rounded-2xl border border-border bg-ivory px-4 py-3 text-sm text-charcoal placeholder-muted transition focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20 @error('lokasi') border-rose-700/50 focus:border-rose-700 focus:ring-rose-700/20 @enderror">
+                @error('lokasi')
+                    <div class="mt-2 flex items-center gap-1.5 text-xs text-rose-700">
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                        </svg>
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
+            </div>
+            <div>
+                <label for="status" class="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Status Operasional <span class="text-rose-700">*</span></label>
+                <select id="status" name="status" required class="w-full rounded-2xl border border-border bg-ivory px-4 py-3 text-sm text-charcoal transition focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20 @error('status') border-rose-700/50 focus:border-rose-700 focus:ring-rose-700/20 @enderror">
+                    <option value="" disabled @selected(!old('status'))>Pilih status ruangan</option>
+                    @foreach ($statusOptions as $status)
+                        <option value="{{ $status->value }}" @selected(old('status') === $status->value)> {{ $status->value }} </option>
+                    @endforeach
+                </select>
+                @error('status')
+                    <div class="mt-2 flex items-center gap-1.5 text-xs text-rose-700">
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                        </svg>
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
+            </div>
+            <div class="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
+                <a href="{{ route('admin.ruangan.index') }}" class="soft-button">Batal</a>
+                <button type="submit" class="primary-button">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Simpan Ruangan
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
 @endsection

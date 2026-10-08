@@ -44,6 +44,14 @@ class User extends Authenticatable
     ];
 
     /**
+     * Get the primary key name used by notifications.
+     */
+    public function getKeyName(): string
+    {
+        return 'id_user';
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

@@ -5,15 +5,20 @@ namespace App\Http\Controllers\Peminjam;
 use App\Enums\KondisiFasilitas;
 use App\Enums\StatusPeminjaman;
 use App\Enums\StatusRuangan;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Peminjam\AccessPeminjamanRequest;
 use App\Http\Requests\Peminjam\StorePeminjamanRequest;
 use App\Models\Fasilitas;
 use App\Models\Peminjaman;
 use App\Models\Ruangan;
+use App\Models\User;
+use App\Notifications\PeminjamanBaru;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class PeminjamanController extends Controller
@@ -58,27 +63,97 @@ class PeminjamanController extends Controller
     public function store(StorePeminjamanRequest $request): RedirectResponse
     {
         $peminjaman = DB::transaction(function () use ($request) {
-            $peminjaman = $request->user()
-                ->peminjaman()
-                ->create([
-                    ...$request->safe()->only([
-                        'id_ruangan',
-                        'tanggal',
-                        'jam_mulai',
-                        'jam_selesai',
-                        'keperluan',
-                    ]),
-                    'status' => StatusPeminjaman::Menunggu,
-                ]);
+            $peminjaman = Peminjaman::query()->create([
+                'id_user' => $request->user()?->id_user,
+                ...$request->safe()->only([
+                    'id_ruangan',
+                    'tanggal',
+                    'jam_mulai',
+                    'jam_selesai',
+                    'keperluan',
+                    'nama_pemohon',
+                    'email_pemohon',
+                    'whatsapp_pemohon',
+                ]),
+                'akses_password' => Hash::make($request->input('akses_password')),
+                'status' => StatusPeminjaman::Menunggu,
+            ]);
 
             $peminjaman->detailPeminjaman()->createMany($request->selectedFasilitas());
 
             return $peminjaman;
         });
 
+        User::query()
+            ->where('role', UserRole::Admin->value)
+            ->chunkById(100, function ($admins) use ($peminjaman) {
+                foreach ($admins as $admin) {
+                    $admin->notify(new PeminjamanBaru($peminjaman, $peminjaman->ruangan));
+                }
+            });
+
         return redirect()
-            ->route('peminjam.peminjaman.show', $peminjaman)
+            ->route('peminjam.peminjaman.success', $peminjaman)
             ->with('success', 'Pengajuan peminjaman berhasil dikirim.');
+    }
+
+    /**
+     * Display the public success page after submitting a guest loan request.
+     */
+    public function success(Peminjaman $peminjaman): View
+    {
+        $peminjaman->load(['ruangan', 'detailPeminjaman.fasilitas']);
+
+        return view('peminjam.peminjaman.success', compact('peminjaman'));
+    }
+
+    /**
+     * Display the public loan progress access form.
+     */
+    public function access(): View
+    {
+        return view('peminjam.peminjaman.access');
+    }
+
+    /**
+     * Verify the loan number and access password, then open its progress.
+     */
+    public function accessStore(AccessPeminjamanRequest $request): RedirectResponse
+    {
+        $peminjaman = Peminjaman::query()
+            ->whereKey($request->input('id_peminjaman'))
+            ->whereNotNull('akses_password')
+            ->first();
+
+        if ($peminjaman === null || ! Hash::check($request->input('akses_password'), $peminjaman->akses_password)) {
+            return redirect()
+                ->route('peminjam.peminjaman.access')
+                ->withErrors(['akses_password' => 'Nomor pengajuan atau kata sandi tidak benar.']);
+        }
+
+        session()->put('accessed_peminjaman_id', $peminjaman->id_peminjaman);
+
+        return redirect()->route('peminjam.peminjaman.progress', $peminjaman);
+    }
+
+    /**
+     * Display progress for a verified guest access session.
+     */
+    public function progress(Peminjaman $peminjaman): View
+    {
+        $accessedId = session('accessed_peminjaman_id');
+
+        if ($accessedId !== $peminjaman->id_peminjaman) {
+            abort(403, 'Akses peminjaman tidak ditemukan.');
+        }
+
+        if (auth()->check()) {
+            Gate::authorize('view', $peminjaman);
+        }
+
+        $peminjaman->load(['ruangan', 'detailPeminjaman.fasilitas']);
+
+        return view('peminjam.peminjaman.show', compact('peminjaman'));
     }
 
     /**

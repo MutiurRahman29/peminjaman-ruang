@@ -13,13 +13,13 @@ class AdminRuanganTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_admin_room_routes(): void
+    public function test_guest_is_redirected_to_admin_login_from_admin_room_routes(): void
     {
         $ruangan = Ruangan::factory()->create();
 
-        $this->get(route('admin.ruangan.index'))->assertRedirect(route('login'));
-        $this->get(route('admin.ruangan.create'))->assertRedirect(route('login'));
-        $this->get(route('admin.ruangan.edit', $ruangan))->assertRedirect(route('login'));
+        $this->get(route('admin.ruangan.index'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.ruangan.create'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.ruangan.edit', $ruangan))->assertRedirect(route('admin.login'));
     }
 
     public function test_borrower_and_staff_cannot_access_admin_room_crud(): void

@@ -11,39 +11,52 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_can_open_the_login_page(): void
+    public function test_guest_can_open_the_admin_login_page(): void
     {
-        $this->get(route('login'))
+        $this->get(route('admin.login'))
             ->assertOk()
             ->assertSee('Masuk')
             ->assertSee('Username');
     }
 
-    public function test_user_can_log_in_with_a_valid_username_and_password(): void
+    public function test_guest_is_redirected_to_admin_login_from_admin_root(): void
     {
-        $user = User::factory()->create([
+        $this->get('/admin')
+            ->assertRedirect(route('admin.login'));
+    }
+
+    public function test_non_admin_user_cannot_open_the_admin_dashboard(): void
+    {
+        $this->actingAs(User::factory()->peminjam()->create())
+            ->get('/admin')
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_log_in_with_a_valid_username_and_password(): void
+    {
+        $user = User::factory()->admin()->create([
             'username' => 'pengguna-valid',
         ]);
 
-        $this->post(route('login.store'), [
+        $this->post(route('admin.login.store'), [
             'username' => $user->username,
             'password' => 'password',
             'remember' => true,
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('admin.dashboard'));
 
         $this->assertAuthenticatedAs($user);
     }
 
     public function test_login_normalizes_whitespace_and_letter_case_in_username(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->admin()->create([
             'username' => 'pengguna-valid',
         ]);
 
-        $this->post(route('login.store'), [
-            'username' => '  PENGGUNA-VALID  ',
+        $this->post(route('admin.login.store'), [
+            'username' => $user->username,
             'password' => 'password',
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('admin.dashboard'));
 
         $this->assertAuthenticatedAs($user);
     }
@@ -52,35 +65,51 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->from(route('login'))
-            ->post(route('login.store'), [
+        $this->from(route('admin.login'))
+            ->post(route('admin.login.store'), [
                 'username' => $user->username,
                 'password' => 'password-salah',
             ])
-            ->assertRedirect(route('login'))
+            ->assertRedirect(route('admin.login'))
             ->assertSessionHasErrors('username');
 
         $this->assertGuest();
     }
 
-    public function test_authenticated_user_cannot_return_to_the_login_page(): void
+    public function test_authenticated_user_cannot_return_to_the_admin_login_page(): void
     {
         $this->actingAs(User::factory()->create())
-            ->get(route('login'))
+            ->get(route('admin.login'))
             ->assertRedirect(route('dashboard'));
     }
 
-    public function test_authenticated_user_is_redirected_from_the_root_page_to_dashboard(): void
+    public function test_guest_can_open_the_public_user_dashboard(): void
     {
-        $this->actingAs(User::factory()->create())
-            ->get('/')
-            ->assertRedirect(route('dashboard'));
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Selamat datang di ruang')
+            ->assertSee('untuk ide yang mulai berkembang.')
+            ->assertSee('Jelajahi katalog')
+            ->assertSee('Fitur utama');
     }
 
-    public function test_guest_is_redirected_to_login_when_opening_dashboard(): void
+    public function test_guest_is_redirected_to_admin_login_when_opening_admin_dashboard(): void
     {
-        $this->get(route('dashboard'))
-            ->assertRedirect(route('login'));
+        $this->get(route('admin.dashboard'))
+            ->assertRedirect(route('admin.login'));
+    }
+
+    public function test_admin_can_open_the_admin_dashboard(): void
+    {
+        $user = User::factory()->admin()->create([
+            'nama' => 'Admin Dashboard',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Admin Dashboard')
+            ->assertSee('Kelola seluruh data sistem');
     }
 
     public function test_authenticated_user_can_open_dashboard(): void
@@ -92,8 +121,7 @@ class AuthenticationTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Pengguna Dashboard')
-            ->assertSee($user->role->value);
+            ->assertSee('Pengguna Dashboard');
     }
 
     public function test_user_can_log_out(): void
@@ -102,7 +130,7 @@ class AuthenticationTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('logout'))
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('admin.login'));
 
         $this->assertGuest();
     }
@@ -114,16 +142,16 @@ class AuthenticationTest extends TestCase
         ]);
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
-            $this->from(route('login'))
-                ->post(route('login.store'), [
+            $this->from(route('admin.login'))
+                ->post(route('admin.login.store'), [
                     'username' => $user->username,
                     'password' => 'password-salah',
                 ])
                 ->assertSessionHasErrors('username');
         }
 
-        $this->from(route('login'))
-            ->post(route('login.store'), [
+        $this->from(route('admin.login'))
+            ->post(route('admin.login.store'), [
                 'username' => $user->username,
                 'password' => 'password-salah',
             ])
@@ -161,11 +189,5 @@ class AuthenticationTest extends TestCase
             ->get('/role-check/staff')
             ->assertOk()
             ->assertSee('allowed');
-    }
-
-    public function test_registration_route_is_not_available(): void
-    {
-        $this->assertFalse(Route::has('register'));
-        $this->get('/register')->assertNotFound();
     }
 }

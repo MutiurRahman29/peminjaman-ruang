@@ -16,12 +16,12 @@ class LoanCompletionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_history_and_completion_routes(): void
+    public function test_guest_is_redirected_to_admin_login_from_history_and_completion_routes(): void
     {
         $peminjaman = $this->createLoan();
 
-        $this->get(route('petugas.peminjaman.history'))->assertRedirect(route('login'));
-        $this->patch(route('petugas.peminjaman.complete', $peminjaman))->assertRedirect(route('login'));
+        $this->get(route('petugas.peminjaman.history'))->assertRedirect(route('admin.login'));
+        $this->patch(route('petugas.peminjaman.complete', $peminjaman))->assertRedirect(route('admin.login'));
     }
 
     public function test_admin_and_borrower_are_forbidden_from_history_and_completion_routes(): void

@@ -12,13 +12,8 @@ use App\Http\Controllers\Petugas\PeminjamanController as PetugasPeminjamanContro
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('auth.login');
-})->middleware('guest');
-
-Route::middleware('guest')->group(function (): void {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
-});
+    return view('landing');
+})->name('home');
 
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
@@ -28,20 +23,32 @@ Route::middleware('auth')->group(function (): void {
     })->name('dashboard');
 });
 
-Route::middleware(['auth', 'role:peminjam'])
-    ->prefix('peminjam')
+Route::middleware(['admin.auth', 'role:admin'])->get('/admin', function () {
+    return view('dashboard');
+})->name('admin.dashboard');
+
+Route::middleware('guest')->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+});
+
+Route::prefix('peminjam')
     ->name('peminjam.')
     ->group(function (): void {
         Route::get('/ruangan', [RuanganController::class, 'index'])->name('ruangan.index');
         Route::get('/fasilitas', [FasilitasController::class, 'index'])->name('fasilitas.index');
 
-        Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
+        Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index')->middleware(['auth', 'role:peminjam']);
         Route::get('/peminjaman/create', [PeminjamanController::class, 'create'])->name('peminjaman.create');
         Route::post('/peminjaman', [PeminjamanController::class, 'store'])->name('peminjaman.store');
-        Route::get('/peminjaman/{peminjaman}', [PeminjamanController::class, 'show'])->name('peminjaman.show');
+        Route::get('/peminjaman/access', [PeminjamanController::class, 'access'])->name('peminjaman.access');
+        Route::post('/peminjaman/access', [PeminjamanController::class, 'accessStore'])->name('peminjaman.access.store');
+        Route::get('/peminjaman/{peminjaman}', [PeminjamanController::class, 'show'])->name('peminjaman.show')->middleware(['auth', 'role:peminjam']);
+        Route::get('/peminjaman/{peminjaman}/berhasil', [PeminjamanController::class, 'success'])->name('peminjaman.success');
+        Route::get('/peminjaman/{peminjaman}/progress', [PeminjamanController::class, 'progress'])->name('peminjaman.progress');
     });
 
-Route::middleware(['auth', 'role:petugas'])
+Route::middleware(['admin.auth', 'role:petugas'])
     ->prefix('petugas')
     ->name('petugas.')
     ->group(function (): void {
@@ -53,12 +60,14 @@ Route::middleware(['auth', 'role:petugas'])
         Route::patch('/peminjaman/{peminjaman}/complete', [PetugasPeminjamanController::class, 'complete'])->name('peminjaman.complete');
     });
 
-Route::middleware(['auth', 'role:admin'])
+Route::middleware(['admin.auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function (): void {
         Route::get('/peminjaman', [AdminPeminjamanController::class, 'index'])->name('peminjaman.index');
         Route::get('/peminjaman/{peminjaman}', [AdminPeminjamanController::class, 'show'])->name('peminjaman.show');
+        Route::patch('/peminjaman/{peminjaman}/approve', [AdminPeminjamanController::class, 'approve'])->name('peminjaman.approve');
+        Route::patch('/peminjaman/{peminjaman}/reject', [AdminPeminjamanController::class, 'reject'])->name('peminjaman.reject');
         Route::resource('ruangan', AdminRuanganController::class)->except('show');
         Route::resource('fasilitas', AdminFasilitasController::class)
             ->parameters(['fasilitas' => 'fasilitas'])

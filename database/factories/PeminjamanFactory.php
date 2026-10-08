@@ -29,6 +29,9 @@ class PeminjamanFactory extends Factory
             'jam_mulai' => '08:00:00',
             'jam_selesai' => '10:00:00',
             'keperluan' => fake()->sentence(),
+            'nama_pemohon' => fake()->name(),
+            'email_pemohon' => fake()->safeEmail(),
+            'whatsapp_pemohon' => '628'.fake()->numerify('########'),
             'status' => StatusPeminjaman::Menunggu,
         ];
     }

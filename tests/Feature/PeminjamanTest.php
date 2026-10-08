@@ -7,9 +7,11 @@ use App\Enums\StatusRuangan;
 use App\Models\Peminjaman;
 use App\Models\Ruangan;
 use App\Models\User;
+use App\Notifications\PeminjamanBaru;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class PeminjamanTest extends TestCase
@@ -22,10 +24,63 @@ class PeminjamanTest extends TestCase
         $this->assertSame('Asia/Jakarta', date_default_timezone_get());
     }
 
-    public function test_guest_cannot_open_borrower_loan_routes(): void
+    public function test_guest_can_open_the_public_loan_form(): void
     {
-        $this->get(route('peminjam.peminjaman.index'))->assertRedirect(route('login'));
-        $this->get(route('peminjam.peminjaman.create'))->assertRedirect(route('login'));
+        $this->get(route('peminjam.peminjaman.create'))->assertOk();
+    }
+
+    public function test_guest_can_access_loan_progress_with_number_and_password(): void
+    {
+        $peminjaman = Peminjaman::factory()->create([
+            'nama_pemohon' => 'Budi Santoso',
+            'email_pemohon' => 'budi@example.com',
+            'whatsapp_pemohon' => '6281234567890',
+            'akses_password' => bcrypt('akses-ruang-123'),
+        ]);
+
+        $this->get(route('peminjam.peminjaman.access'))
+            ->assertOk()
+            ->assertSee('Cek peminjamanmu.')
+            ->assertSee('Nomor pengajuan')
+            ->assertSee('Kata sandi');
+
+        $this->followingRedirects()
+            ->post(route('peminjam.peminjaman.access'), [
+                'id_peminjaman' => $peminjaman->id_peminjaman,
+                'akses_password' => 'akses-ruang-123',
+            ])
+            ->assertOk()
+            ->assertSee($peminjaman->keperluan);
+    }
+
+    public function test_guest_cannot_access_loan_with_an_incorrect_password(): void
+    {
+        $peminjaman = Peminjaman::factory()->create([
+            'nama_pemohon' => 'Budi Santoso',
+            'email_pemohon' => 'budi@example.com',
+            'whatsapp_pemohon' => '6281234567890',
+            'akses_password' => bcrypt('akses-ruang-123'),
+        ]);
+
+        $this->post(route('peminjam.peminjaman.access'), [
+            'id_peminjaman' => $peminjaman->id_peminjaman,
+            'akses_password' => 'salah1',
+        ])
+            ->assertRedirect(route('peminjam.peminjaman.access'))
+            ->assertSessionHasErrors('akses_password');
+    }
+
+    public function test_loan_access_password_is_stored_as_a_hash(): void
+    {
+        $peminjaman = Peminjaman::factory()->create([
+            'nama_pemohon' => 'Budi Santoso',
+            'email_pemohon' => 'budi@example.com',
+            'whatsapp_pemohon' => '6281234567890',
+            'akses_password' => bcrypt('akses-ruang-123'),
+        ]);
+
+        $this->assertNotSame('akses-ruang-123', $peminjaman->fresh()->akses_password);
+        $this->assertTrue(Hash::check('akses-ruang-123', $peminjaman->fresh()->akses_password));
     }
 
     public function test_admin_and_staff_cannot_open_borrower_loan_routes(): void
@@ -48,32 +103,78 @@ class PeminjamanTest extends TestCase
             'status' => StatusRuangan::Digunakan,
         ]);
 
-        $this->actingAs(User::factory()->peminjam()->create())
-            ->get(route('peminjam.peminjaman.create'))
+        $this->get(route('peminjam.peminjaman.create'))
             ->assertOk()
             ->assertSee($tersedia->nama_ruangan)
-            ->assertDontSee($digunakan->nama_ruangan);
+            ->assertDontSee($digunakan->nama_ruangan)
+            ->assertSee('Nama pemohon')
+            ->assertSee('Email pemohon')
+            ->assertSee('Nomor WhatsApp');
     }
 
-    public function test_valid_request_uses_authenticated_user_and_pending_status(): void
+    public function test_valid_request_can_be_created_without_an_account_and_is_pending(): void
     {
-        $user = User::factory()->peminjam()->create();
-        $otherUser = User::factory()->peminjam()->create();
         $ruangan = Ruangan::factory()->create();
 
-        $this->actingAs($user)
-            ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan) + [
-                'id_user' => $otherUser->id_user,
-                'status' => StatusPeminjaman::Disetujui->value,
-            ])
-            ->assertRedirect();
+        $response = $this->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan) + [
+            'nama_pemohon' => 'Budi Santoso',
+            'email_pemohon' => 'budi@example.com',
+            'whatsapp_pemohon' => '6281234567890',
+            'status' => StatusPeminjaman::Disetujui->value,
+            'konfirmasi' => '1',
+        ]);
+
+        $response->assertRedirect();
 
         $this->assertDatabaseHas('peminjaman', [
-            'id_user' => $user->id_user,
+            'id_user' => null,
             'id_ruangan' => $ruangan->id_ruangan,
+            'nama_pemohon' => 'Budi Santoso',
+            'email_pemohon' => 'budi@example.com',
+            'whatsapp_pemohon' => '6281234567890',
             'status' => StatusPeminjaman::Menunggu->value,
         ]);
         $this->assertDatabaseCount('detail_peminjaman', 0);
+    }
+
+    public function test_new_loan_request_notifies_all_admins(): void
+    {
+        $ruangan = Ruangan::factory()->create();
+        $adminA = User::factory()->admin()->create();
+        $adminB = User::factory()->admin()->create();
+
+        $response = $this->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan) + [
+            'nama_pemohon' => 'Budi Santoso',
+            'email_pemohon' => 'budi@example.com',
+            'whatsapp_pemohon' => '6281234567890',
+            'konfirmasi' => '1',
+        ]);
+
+        $response->assertRedirect();
+
+        $notification = PeminjamanBaru::class;
+        $adminANotification = $adminA->notifications()->first();
+        $adminBNotification = $adminB->notifications()->first();
+
+        $this->assertNotNull($adminANotification);
+        $this->assertNotNull($adminBNotification);
+        $this->assertSame($notification, $adminANotification->type);
+        $this->assertSame($notification, $adminBNotification->type);
+        $this->assertSame('Budi Santoso', $adminANotification->data['nama_pemohon']);
+        $this->assertSame('Budi Santoso', $adminBNotification->data['nama_pemohon']);
+    }
+
+    public function test_missing_confirmation_is_rejected(): void
+    {
+        $ruangan = Ruangan::factory()->create();
+
+        $this->followingRedirects()
+            ->from(route('peminjam.peminjaman.create'))
+            ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan))
+            ->assertOk()
+            ->assertSee('Konfirmasi persetujuan wajib dipilih.');
+
+        $this->assertDatabaseCount('peminjaman', 0);
     }
 
     public function test_past_dates_are_rejected(): void
@@ -99,6 +200,7 @@ class PeminjamanTest extends TestCase
                 'tanggal' => '2026-09-09',
                 'jam_mulai' => '09:00',
                 'jam_selesai' => '11:00',
+                'konfirmasi' => '1',
             ]))
             ->assertRedirect(route('peminjam.peminjaman.create'))
             ->assertSessionHasErrors([
@@ -118,6 +220,7 @@ class PeminjamanTest extends TestCase
             ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan, [
                 'jam_mulai' => '09:00',
                 'jam_selesai' => '09:00',
+                'konfirmasi' => '1',
             ]))
             ->assertSessionHasErrors([
                 'jam_selesai' => 'Jam selesai harus setelah jam mulai.',
@@ -127,6 +230,7 @@ class PeminjamanTest extends TestCase
             ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan, [
                 'jam_mulai' => '09:00',
                 'jam_selesai' => '08:30',
+                'konfirmasi' => '1',
             ]))
             ->assertSessionHasErrors('jam_selesai');
     }
@@ -138,7 +242,9 @@ class PeminjamanTest extends TestCase
 
         $this->actingAs($user)
             ->from(route('peminjam.peminjaman.create'))
-            ->post(route('peminjam.peminjaman.store'), $this->validPayload($digunakan))
+            ->post(route('peminjam.peminjaman.store'), $this->validPayload($digunakan, [
+                'konfirmasi' => '1',
+            ]))
             ->assertSessionHasErrors([
                 'id_ruangan' => 'Ruangan yang dipilih tidak valid atau tidak tersedia.',
             ]);
@@ -146,6 +252,7 @@ class PeminjamanTest extends TestCase
         $this->from(route('peminjam.peminjaman.create'))
             ->post(route('peminjam.peminjaman.store'), $this->validPayload($digunakan, [
                 'id_ruangan' => 99999,
+                'konfirmasi' => '1',
             ]))
             ->assertSessionHasErrors('id_ruangan');
     }
@@ -160,6 +267,7 @@ class PeminjamanTest extends TestCase
             ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan, [
                 'jam_mulai' => '09:30',
                 'jam_selesai' => '10:30',
+                'konfirmasi' => '1',
             ]))
             ->assertSessionHasErrors('id_ruangan');
     }
@@ -173,6 +281,7 @@ class PeminjamanTest extends TestCase
             ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan, [
                 'jam_mulai' => '10:00',
                 'jam_selesai' => '11:00',
+                'konfirmasi' => '1',
             ]))
             ->assertRedirect();
 
@@ -188,6 +297,7 @@ class PeminjamanTest extends TestCase
             ->post(route('peminjam.peminjaman.store'), $this->validPayload($ruangan, [
                 'jam_mulai' => '09:30',
                 'jam_selesai' => '10:30',
+                'konfirmasi' => '1',
             ]))
             ->assertRedirect();
 
@@ -279,6 +389,8 @@ class PeminjamanTest extends TestCase
 
         $response->assertOk();
         $this->assertSame(1, substr_count($response->getContent(), 'Keperluan wajib diisi.'));
+        $response->assertSee('Periksa kembali formulir');
+        $response->assertSee('Tautan merah menunjukkan field yang belum lengkap atau tidak valid.');
     }
 
     /**
@@ -295,6 +407,11 @@ class PeminjamanTest extends TestCase
             'jam_mulai' => '08:00',
             'jam_selesai' => '09:00',
             'keperluan' => 'Rapat pengembangan aplikasi',
+            'nama_pemohon' => 'Budi Santoso',
+            'email_pemohon' => 'budi@example.com',
+            'whatsapp_pemohon' => '6281234567890',
+            'akses_password' => 'akses-ruang-123',
+            'akses_password_confirmation' => 'akses-ruang-123',
             ...$overrides,
         ];
     }

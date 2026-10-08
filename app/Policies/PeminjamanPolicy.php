@@ -22,7 +22,7 @@ class PeminjamanPolicy
      */
     public function approve(User $user, Peminjaman $peminjaman): bool
     {
-        return $user->role === UserRole::Petugas;
+        return in_array($user->role, [UserRole::Admin, UserRole::Petugas], true);
     }
 
     /**
@@ -30,7 +30,7 @@ class PeminjamanPolicy
      */
     public function reject(User $user, Peminjaman $peminjaman): bool
     {
-        return $user->role === UserRole::Petugas;
+        return in_array($user->role, [UserRole::Admin, UserRole::Petugas], true);
     }
 
     /**

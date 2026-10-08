@@ -13,13 +13,13 @@ class AdminFasilitasTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_admin_facility_routes(): void
+    public function test_guest_is_redirected_to_admin_login_from_admin_facility_routes(): void
     {
         $fasilitas = Fasilitas::factory()->create();
 
-        $this->get(route('admin.fasilitas.index'))->assertRedirect(route('login'));
-        $this->get(route('admin.fasilitas.create'))->assertRedirect(route('login'));
-        $this->get(route('admin.fasilitas.edit', $fasilitas))->assertRedirect(route('login'));
+        $this->get(route('admin.fasilitas.index'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.fasilitas.create'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.fasilitas.edit', $fasilitas))->assertRedirect(route('admin.login'));
     }
 
     public function test_borrower_and_staff_cannot_access_admin_facility_crud(): void

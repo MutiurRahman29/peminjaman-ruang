@@ -13,13 +13,13 @@ class AdminUserTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_admin_user_routes(): void
+    public function test_guest_is_redirected_to_admin_login_from_admin_user_routes(): void
     {
         $user = User::factory()->create();
 
-        $this->get(route('admin.users.index'))->assertRedirect(route('login'));
-        $this->get(route('admin.users.create'))->assertRedirect(route('login'));
-        $this->get(route('admin.users.edit', $user))->assertRedirect(route('login'));
+        $this->get(route('admin.users.index'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.users.create'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.users.edit', $user))->assertRedirect(route('admin.login'));
     }
 
     public function test_staff_and_borrower_cannot_access_admin_user_crud(): void

@@ -8,6 +8,9 @@ use App\Http\Requests\Admin\FilterPeminjamanRequest;
 use App\Models\Peminjaman;
 use App\Models\Ruangan;
 use App\Models\User;
+use App\Services\LoanApprovalService;
+use DomainException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -60,5 +63,41 @@ class PeminjamanController extends Controller
         $peminjaman->load(['user', 'ruangan', 'detailPeminjaman.fasilitas']);
 
         return view('admin.peminjaman.show', compact('peminjaman'));
+    }
+
+    /**
+     * Approve a pending loan from the admin report.
+     */
+    public function approve(Peminjaman $peminjaman, LoanApprovalService $approval): RedirectResponse
+    {
+        Gate::authorize('approve', $peminjaman);
+
+        try {
+            $approval->approve($peminjaman);
+        } catch (DomainException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.peminjaman.show', $peminjaman->id_peminjaman)
+            ->with('success', 'Pengajuan peminjaman disetujui.');
+    }
+
+    /**
+     * Reject a pending loan from the admin report.
+     */
+    public function reject(Peminjaman $peminjaman, LoanApprovalService $approval): RedirectResponse
+    {
+        Gate::authorize('reject', $peminjaman);
+
+        try {
+            $approval->reject($peminjaman);
+        } catch (DomainException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.peminjaman.show', $peminjaman->id_peminjaman)
+            ->with('success', 'Pengajuan peminjaman ditolak.');
     }
 }

@@ -12,10 +12,10 @@ class PeminjamCatalogTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_borrower_catalogs(): void
+    public function test_guest_can_open_both_catalogs(): void
     {
-        $this->get(route('peminjam.ruangan.index'))->assertRedirect(route('login'));
-        $this->get(route('peminjam.fasilitas.index'))->assertRedirect(route('login'));
+        $this->get(route('peminjam.ruangan.index'))->assertOk();
+        $this->get(route('peminjam.fasilitas.index'))->assertOk();
     }
 
     public function test_borrower_can_open_both_catalogs(): void
@@ -28,24 +28,24 @@ class PeminjamCatalogTest extends TestCase
             ->assertOk();
     }
 
-    public function test_admin_cannot_open_borrower_catalogs(): void
+    public function test_admin_can_open_both_catalogs(): void
     {
         $this->actingAs(User::factory()->admin()->create())
             ->get(route('peminjam.ruangan.index'))
-            ->assertForbidden();
+            ->assertOk();
 
         $this->get(route('peminjam.fasilitas.index'))
-            ->assertForbidden();
+            ->assertOk();
     }
 
-    public function test_staff_cannot_open_borrower_catalogs(): void
+    public function test_staff_can_open_both_catalogs(): void
     {
         $this->actingAs(User::factory()->petugas()->create())
             ->get(route('peminjam.ruangan.index'))
-            ->assertForbidden();
+            ->assertOk();
 
         $this->get(route('peminjam.fasilitas.index'))
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_room_catalog_displays_rooms_in_name_order(): void

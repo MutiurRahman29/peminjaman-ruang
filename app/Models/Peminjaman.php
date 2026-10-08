@@ -24,11 +24,15 @@ class Peminjaman extends Model
     protected $fillable = [
         'id_user',
         'id_ruangan',
+        'nama_pemohon',
+        'email_pemohon',
+        'whatsapp_pemohon',
         'tanggal',
         'jam_mulai',
         'jam_selesai',
         'keperluan',
         'status',
+        'akses_password',
     ];
 
     /**

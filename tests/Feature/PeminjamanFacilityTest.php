@@ -281,6 +281,7 @@ class PeminjamanFacilityTest extends TestCase
             'jam_mulai' => '08:00',
             'jam_selesai' => '09:00',
             'keperluan' => 'Rapat pengembangan aplikasi',
+            'konfirmasi' => '1',
             ...$overrides,
         ];
     }

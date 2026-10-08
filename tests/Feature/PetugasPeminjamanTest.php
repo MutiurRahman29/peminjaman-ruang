@@ -18,12 +18,12 @@ class PetugasPeminjamanTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_staff_routes(): void
+    public function test_guest_is_redirected_to_admin_login_from_staff_routes(): void
     {
         $peminjaman = $this->createLoan();
 
-        $this->get(route('petugas.peminjaman.index'))->assertRedirect(route('login'));
-        $this->get(route('petugas.peminjaman.show', $peminjaman))->assertRedirect(route('login'));
+        $this->get(route('petugas.peminjaman.index'))->assertRedirect(route('admin.login'));
+        $this->get(route('petugas.peminjaman.show', $peminjaman))->assertRedirect(route('admin.login'));
     }
 
     public function test_borrower_and_admin_are_forbidden_from_staff_routes(): void

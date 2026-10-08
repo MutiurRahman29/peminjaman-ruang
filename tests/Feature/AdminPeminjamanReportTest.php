@@ -15,12 +15,12 @@ class AdminPeminjamanReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_admin_report_routes(): void
+    public function test_guest_is_redirected_to_admin_login_from_admin_report_routes(): void
     {
         $peminjaman = $this->createLoan();
 
-        $this->get(route('admin.peminjaman.index'))->assertRedirect(route('login'));
-        $this->get(route('admin.peminjaman.show', $peminjaman))->assertRedirect(route('login'));
+        $this->get(route('admin.peminjaman.index'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.peminjaman.show', $peminjaman))->assertRedirect(route('admin.login'));
     }
 
     public function test_staff_and_borrower_are_forbidden_from_admin_report_routes(): void
@@ -35,6 +35,30 @@ class AdminPeminjamanReportTest extends TestCase
             $this->get(route('admin.peminjaman.show', $peminjaman))
                 ->assertForbidden();
         }
+    }
+
+    public function test_admin_report_handles_a_loan_without_a_user(): void
+    {
+        $peminjaman = Peminjaman::factory()->create([
+            'id_user' => null,
+            'id_ruangan' => Ruangan::factory()->create(),
+            'tanggal' => '2026-01-10',
+            'jam_mulai' => '08:00',
+            'jam_selesai' => '09:00',
+            'keperluan' => 'Peminjaman tanpa pengguna',
+        ]);
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.peminjaman.index'))
+            ->assertOk()
+            ->assertSee('Tidak tersedia')
+            ->assertSee($peminjaman->keperluan);
+
+        $this->actingAs($admin)
+            ->get(route('admin.peminjaman.show', $peminjaman))
+            ->assertOk()
+            ->assertSee('Tidak tersedia');
     }
 
     public function test_admin_can_view_ordered_report_and_read_only_detail_with_or_without_facilities(): void
@@ -57,20 +81,49 @@ class AdminPeminjamanReportTest extends TestCase
             ->get(route('admin.peminjaman.index'))
             ->assertOk()
             ->assertSeeInOrder([$terbaru->keperluan, $lama->keperluan])
-            ->assertDontSee('Setujui')
-            ->assertDontSee('Tolak')
+            ->assertSee('Setujui')
+            ->assertSee('Tolak')
+            ->assertSee($terbaru->email_pemohon)
+            ->assertSee($terbaru->whatsapp_pemohon)
             ->assertDontSee('Tandai Selesai');
 
         $this->get(route('admin.peminjaman.show', $terbaru))
             ->assertOk()
             ->assertSee('Proyektor: 2')
-            ->assertDontSee('Setujui')
-            ->assertDontSee('Tolak')
+            ->assertSee('Setujui')
+            ->assertSee('Tolak')
             ->assertDontSee('Tandai Selesai');
 
         $this->get(route('admin.peminjaman.show', $lama))
             ->assertOk()
             ->assertSee('Tidak ada fasilitas tambahan.');
+    }
+
+    public function test_admin_can_approve_and_reject_pending_loans(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $futureDate = now(config('app.timezone'))->addDay()->toDateString();
+        $approved = $this->createLoan(
+            status: StatusPeminjaman::Menunggu,
+            tanggal: $futureDate,
+        );
+        $rejected = $this->createLoan(
+            status: StatusPeminjaman::Menunggu,
+            tanggal: $futureDate,
+        );
+
+        $this->actingAs($admin)
+            ->patch(route('admin.peminjaman.approve', $approved))
+            ->assertRedirect(route('admin.peminjaman.show', $approved->id_peminjaman))
+            ->assertSessionHas('success');
+
+        $this->actingAs($admin)
+            ->patch(route('admin.peminjaman.reject', $rejected))
+            ->assertRedirect(route('admin.peminjaman.show', $rejected->id_peminjaman))
+            ->assertSessionHas('success');
+
+        $this->assertSame(StatusPeminjaman::Disetujui, Peminjaman::findOrFail($approved->id_peminjaman)->status);
+        $this->assertSame(StatusPeminjaman::Ditolak, Peminjaman::findOrFail($rejected->id_peminjaman)->status);
     }
 
     public function test_each_filter_and_a_combined_filter_limit_the_report(): void
@@ -186,10 +239,12 @@ class AdminPeminjamanReportTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('admin.peminjaman.index'))
-            ->assertSee('Menunggu: 0')
-            ->assertSee('Disetujui: 0')
-            ->assertSee('Ditolak: 0')
-            ->assertSee('Selesai: 0');
+            ->assertViewHas('ringkasan', fn ($ringkasan): bool => $ringkasan->toArray() === [
+                StatusPeminjaman::Menunggu->value => 0,
+                StatusPeminjaman::Disetujui->value => 0,
+                StatusPeminjaman::Ditolak->value => 0,
+                StatusPeminjaman::Selesai->value => 0,
+            ]);
 
         $this->createLoan(status: StatusPeminjaman::Menunggu);
         $this->createLoan(status: StatusPeminjaman::Menunggu);
@@ -198,10 +253,12 @@ class AdminPeminjamanReportTest extends TestCase
         $this->createLoan(status: StatusPeminjaman::Selesai);
 
         $this->get(route('admin.peminjaman.index'))
-            ->assertSee('Menunggu: 2')
-            ->assertSee('Disetujui: 1')
-            ->assertSee('Ditolak: 1')
-            ->assertSee('Selesai: 1');
+            ->assertViewHas('ringkasan', fn ($ringkasan): bool => $ringkasan->toArray() === [
+                StatusPeminjaman::Menunggu->value => 2,
+                StatusPeminjaman::Disetujui->value => 1,
+                StatusPeminjaman::Ditolak->value => 1,
+                StatusPeminjaman::Selesai->value => 1,
+            ]);
     }
 
     public function test_report_does_not_change_loan_data_or_grant_admin_transition_access(): void
@@ -220,6 +277,10 @@ class AdminPeminjamanReportTest extends TestCase
         $after = Peminjaman::query()->findOrFail($peminjaman->id_peminjaman)->getAttributes();
         $this->assertSame($before, $after);
 
+        $this->actingAs(User::factory()->peminjam()->create())
+            ->patch(route('admin.peminjaman.approve', $peminjaman))
+            ->assertForbidden();
+        $this->patch(route('admin.peminjaman.reject', $peminjaman))->assertForbidden();
         $this->patch(route('petugas.peminjaman.approve', $peminjaman))->assertForbidden();
         $this->patch(route('petugas.peminjaman.reject', $peminjaman))->assertForbidden();
         $this->patch(route('petugas.peminjaman.complete', $peminjaman))->assertForbidden();

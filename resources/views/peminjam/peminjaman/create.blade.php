@@ -3,254 +3,217 @@
 @section('title', 'Ajukan Peminjaman')
 
 @section('content')
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+        <nav class="mb-7 flex flex-wrap items-center gap-2 text-xs font-medium text-muted" aria-label="Navigasi breadcrumb">
+            <a href="{{ route('dashboard') }}" class="hover:text-taupe">Dashboard</a>
+            <span aria-hidden="true">/</span>
+            <a href="{{ route('peminjam.peminjaman.index') }}" class="hover:text-taupe">Riwayat Peminjaman</a>
+            <span aria-hidden="true">/</span>
+            <span class="text-charcoal">Ajukan Peminjaman</span>
+        </nav>
 
-<div class="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8 selection:bg-indigo-500/30">
+        <header class="mb-8 max-w-3xl">
+            <p class="section-eyebrow">Pilih kebutuhanmu</p>
+            <h1 class="text-3xl font-extrabold tracking-[-0.04em] text-charcoal sm:text-4xl">Ajukan peminjaman dengan cepat.</h1>
+            <p class="mt-4 text-sm leading-6 text-muted sm:text-base">Pilih ruangan yang sesuai, tentukan jadwal, dan sesuaikan fasilitas tambahan yang dibutuhkan.</p>
+        </header>
 
-    {{-- Page Header & Back Link --}}
-    <div class="mb-8 animate-fade-up animate-duration-[600ms] animate-ease-out">
-        <a href="{{ route('dashboard') }}" class="group mb-4 inline-flex items-center text-sm font-medium text-zinc-400 transition-colors hover:text-white">
-            <svg class="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-            Kembali ke Dashboard
-        </a>
-
-        <h1 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Ajukan Peminjaman
-        </h1>
-        <p class="mt-2 text-sm text-zinc-400">
-            Isi formulir di bawah ini untuk mengajukan peminjaman ruangan dan fasilitas.
-        </p>
-    </div>
-
-    {{-- Error Summary Alert (Refined & High Contrast) --}}
-    @if ($errors->any())
-        <div class="mb-6 flex items-start gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-300 animate-shake animate-duration-300">
-            <svg class="h-5 w-5 flex-shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            <div>
-                <p class="font-semibold text-rose-200">Pengajuan belum dapat dikirim</p>
-                <p class="mt-0.5 text-xs text-rose-300/80">Silakan periksa kembali beberapa isian formulir di bawah yang belum sesuai.</p>
+        @if ($errors->any())
+            <div class="mb-6 rounded-2xl border border-rose-700/20 bg-rose-700/10 p-4" role="alert" aria-live="polite">
+                <div class="flex items-start gap-3">
+                    <svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-rose-700">Periksa kembali formulir</p>
+                        <p class="mt-1 text-xs leading-5 text-rose-700/80">Tautan merah menunjukkan field yang belum lengkap atau tidak valid.</p>
+                    </div>
+                </div>
             </div>
-        </div>
-    @endif
+        @endif
 
-    {{-- Empty State jika Ruangan Kosong --}}
-    @if ($ruangan->isEmpty())
-        <div class="flex flex-col items-center justify-center rounded-3xl border border-zinc-800/80 bg-[#111113] p-12 text-center animate-fade-up animate-duration-[800ms]">
-            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 ring-1 ring-zinc-700/50">
-                <svg class="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
-            </div>
-            <h2 class="text-base font-semibold text-zinc-200">Tidak ada ruangan tersedia</h2>
-            <p class="mt-1 text-sm text-zinc-500 max-w-sm">
-                Saat ini belum ada ruangan berstatus siap pinjam. Silakan coba lagi beberapa saat lagi.
-            </p>
-        </div>
-
-    @else
-
-        {{-- Form Container Card --}}
-        <div class="rounded-3xl border border-zinc-800/80 bg-[#111113] p-6 sm:p-8 shadow-2xl animate-fade-up animate-duration-[800ms] animate-delay-100 animate-ease-out">
-            <form method="POST" action="{{ route('peminjam.peminjaman.store') }}" class="space-y-6">
+        @if ($ruangan->isEmpty())
+            <section class="glass-card flex min-h-80 flex-col items-center justify-center rounded-[1.75rem] p-8 text-center">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-cream text-muted">
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                </div>
+                <h2 class="mt-5 text-lg font-semibold text-charcoal">Tidak ada ruangan tersedia</h2>
+                <p class="mt-2 max-w-sm text-sm text-muted">Belum ada ruangan yang dapat dipinjam pada saat ini.</p>
+            </section>
+        @else
+            <form id="peminjaman-form" method="POST" action="{{ route('peminjam.peminjaman.store') }}" class="grid gap-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
                 @csrf
 
-                {{-- Select Ruangan --}}
-                <div>
-                    <label for="id_ruangan" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                        Ruangan Pilihan <span class="text-rose-400">*</span>
-                    </label>
+                <div class="space-y-7">
+                    <section class="glass-card overflow-hidden rounded-[1.75rem]" aria-labelledby="room-selection-title">
+                        <div class="border-b border-border px-5 py-5 sm:px-7">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-taupe">Langkah 1</p>
+                                    <h2 id="room-selection-title" class="mt-1 text-xl font-bold text-charcoal">Pilih ruangan</h2>
+                                </div>
+                                <span class="rounded-full bg-cream px-3 py-1 text-xs font-semibold text-muted">{{ $ruangan->count() }} tersedia</span>
+                            </div>
+                        </div>
 
-                    <div class="relative">
-                        <select
-                            id="id_ruangan"
-                            name="id_ruangan"
-                            required
-                            class="w-full appearance-none rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-100 transition-all focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 @error('id_ruangan') border-rose-500/50 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                        >
-                            <option value="" disabled selected class="text-zinc-500">-- Pilih Ruangan --</option>
+                        <div x-data="{ selected: {{ old('id_ruangan') ? json_encode(old('id_ruangan')) : 'null' }} }" class="grid gap-4 p-5 sm:grid-cols-2 sm:p-7">
                             @foreach ($ruangan as $item)
-                                <option value="{{ $item->id_ruangan }}" @selected(old('id_ruangan') == $item->id_ruangan)>
-                                    {{ $item->nama_ruangan }} (Kapasitas: {{ $item->kapasitas }} orang)
-                                </option>
-                            @endforeach
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-500">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    @error('id_ruangan')
-                        <p class="mt-2 flex items-center gap-1 text-xs text-rose-400">
-                            <span>{{ $message }}</span>
-                        </p>
-                    @enderror
-                </div>
-
-                {{-- Tanggal Peminjaman --}}
-                <div>
-                    <label for="tanggal" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                        Tanggal Pelaksanaan <span class="text-rose-400">*</span>
-                    </label>
-
-                    <input
-                        id="tanggal"
-                        name="tanggal"
-                        type="date"
-                        value="{{ old('tanggal') }}"
-                        min="{{ now()->toDateString() }}"
-                        required
-                        class="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-100 transition-all focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 [color-scheme:dark] @error('tanggal') border-rose-500/50 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                    >
-
-                    @error('tanggal')
-                        <p class="mt-2 flex items-center gap-1 text-xs text-rose-400">
-                            <span>{{ $message }}</span>
-                        </p>
-                    @enderror
-                </div>
-
-                {{-- Jam Mulai & Jam Selesai --}}
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label for="jam_mulai" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                            Jam Mulai <span class="text-rose-400">*</span>
-                        </label>
-
-                        <input
-                            id="jam_mulai"
-                            name="jam_mulai"
-                            type="time"
-                            value="{{ old('jam_mulai') }}"
-                            required
-                            class="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-100 transition-all focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 [color-scheme:dark] @error('jam_mulai') border-rose-500/50 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                        >
-
-                        @error('jam_mulai')
-                            <p class="mt-2 text-xs text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="jam_selesai" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                            Jam Selesai <span class="text-rose-400">*</span>
-                        </label>
-
-                        <input
-                            id="jam_selesai"
-                            name="jam_selesai"
-                            type="time"
-                            value="{{ old('jam_selesai') }}"
-                            required
-                            class="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-100 transition-all focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 [color-scheme:dark] @error('jam_selesai') border-rose-500/50 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                        >
-
-                        @error('jam_selesai')
-                            <p class="mt-2 text-xs text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                {{-- Keperluan --}}
-                <div>
-                    <label for="keperluan" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                        Maksud & Keperluan <span class="text-rose-400">*</span>
-                    </label>
-
-                    <textarea
-                        id="keperluan"
-                        name="keperluan"
-                        maxlength="1000"
-                        rows="3"
-                        required
-                        placeholder="Jelaskan secara singkat agenda atau kegiatan yang akan dilaksanakan..."
-                        class="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 transition-all focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 @error('keperluan') border-rose-500/50 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                    >{{ old('keperluan') }}</textarea>
-
-                    @error('keperluan')
-                        <p class="mt-2 text-xs text-rose-400">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="my-6 border-t border-zinc-800/80"></div>
-
-                {{-- Fasilitas Tambahan Section --}}
-                <div>
-                    <div class="mb-3 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Fasilitas Tambahan</p>
-                            <p class="text-xs text-zinc-500 mt-0.5">Opsional, masukkan kuantitas barang jika dibutuhkan</p>
-                        </div>
-                    </div>
-
-                    @error('fasilitas')
-                        <p class="mb-3 text-xs text-rose-400">{{ $message }}</p>
-                    @enderror
-
-                    <div class="space-y-3">
-                        @forelse ($fasilitas as $item)
-                            <div class="flex items-center justify-between gap-4 rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 transition-colors hover:border-zinc-700/60">
-                                <div class="min-w-0 flex-1">
-                                    <label for="fasilitas_{{ $item->id_fasilitas }}" class="block text-sm font-medium text-zinc-200 cursor-pointer">
-                                        {{ $item->nama_fasilitas }}
+                                <div class="group relative block cursor-pointer overflow-hidden rounded-2xl border border-border bg-ivory transition duration-300 hover:-translate-y-0.5 hover:border-taupe hover:shadow-lg {{ old('id_ruangan') == $item->id_ruangan ? 'border-taupe ring-2 ring-taupe/15' : '' }}">
+                                    <input id="ruangan_{{ $item->id_ruangan }}" type="radio" name="id_ruangan" value="{{ $item->id_ruangan }}" class="peer sr-only" aria-label="Pilih {{ $item->nama_ruangan }}" x-model="selected" @checked(old('id_ruangan') == $item->id_ruangan)>
+                                    <label for="ruangan_{{ $item->id_ruangan }}" class="absolute inset-0 z-20 cursor-pointer focus-within:ring-2 focus-within:ring-taupe focus-within:ring-offset-2">
+                                        <span class="sr-only">Pilih {{ $item->nama_ruangan }}</span>
                                     </label>
-                                    <p class="text-xs text-zinc-500 mt-0.5">Stok tersedia: <span class="text-zinc-400 font-medium">{{ $item->jumlah }} unit</span></p>
+                                    <div class="relative aspect-16/10 overflow-hidden bg-cream">
+                                        <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&amp;fit=crop&amp;w=1200&amp;q=80" alt="Foto interior {{ $item->nama_ruangan }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" width="720" height="440" loading="lazy">
+                                        <span class="absolute left-3 top-3 rounded-full bg-ivory/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-charcoal shadow-sm backdrop-blur">Tersedia</span>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <h3 class="text-base font-bold text-charcoal">{{ $item->nama_ruangan }}</h3>
+                                                <p class="mt-1 flex items-center gap-1.5 text-xs text-muted">
+                                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                                                    {{ $item->lokasi }}
+                                                </p>
+                                            </div>
+                                            <span class="rounded-xl bg-cream px-2.5 py-1.5 text-xs font-bold text-charcoal">{{ $item->kapasitas }} orang</span>
+                                        </div>
+                                        <div class="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
+                                            <span x-show="selected != {{ $item->id_ruangan }}" class="font-semibold text-muted">Pilih ruangan</span>
+                                            <span x-show="selected == {{ $item->id_ruangan }}" class="font-semibold text-taupe">Dipilih</span>
+                                            <span class="flex h-7 w-7 items-center justify-center rounded-full border border-border text-charcoal transition" :class="selected == {{ $item->id_ruangan }} ? 'border-taupe bg-taupe text-ivory' : ''" aria-hidden="true">✓</span>
+                                        </div>
+                                    </div>
                                 </div>
+                            @endforeach
+                        </div>
+                        @error('id_ruangan')
+                            <div class="mx-5 mb-5 flex items-center gap-1.5 text-xs font-medium text-rose-700 sm:mx-7 sm:mb-7">
+                                <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </section>
 
-                                <div class="flex flex-col items-end">
-                                    <input
-                                        id="fasilitas_{{ $item->id_fasilitas }}"
-                                        name="fasilitas[{{ $item->id_fasilitas }}]"
-                                        type="number"
-                                        min="1"
-                                        max="{{ $item->jumlah }}"
-                                        value="{{ old('fasilitas.'.$item->id_fasilitas) }}"
-                                        placeholder="0"
-                                        class="w-20 text-center rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 transition-all focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                                    >
+                    <section class="glass-card rounded-[1.75rem] p-5 sm:p-7" aria-labelledby="schedule-title">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-taupe">Langkah 2</p>
+                        <h2 id="schedule-title" class="mt-1 text-xl font-bold text-charcoal">Tentukan jadwal</h2>
+                        <div class="mt-6 grid gap-5 sm:grid-cols-2">
+                            <div>
+                                <label for="tanggal" class="mb-2 block text-sm font-semibold text-charcoal">Tanggal pelaksanaan <span class="text-rose-700">*</span></label>
+                                <input id="tanggal" name="tanggal" type="date" value="{{ old('tanggal') }}" min="{{ now()->toDateString() }}" required aria-invalid="{{ $errors->has('tanggal') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('tanggal') ? 'tanggal-error' : '' }}" class="w-full rounded-2xl border {{ $errors->has('tanggal') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('tanggal')<p id="tanggal-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="keperluan" class="mb-2 block text-sm font-semibold text-charcoal">Maksud &amp; keperluan <span class="text-rose-700">*</span></label>
+                                <textarea id="keperluan" name="keperluan" maxlength="1000" rows="3" required placeholder="Jelaskan agenda atau kegiatan..." aria-invalid="{{ $errors->has('keperluan') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('keperluan') ? 'keperluan-error' : '' }}" class="w-full resize-none rounded-2xl border {{ $errors->has('keperluan') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal placeholder-muted transition focus:outline-none focus:ring-2">{{ old('keperluan') }}</textarea>
+                                @error('keperluan')<p id="keperluan-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="nama_pemohon" class="mb-2 block text-sm font-semibold text-charcoal">Nama pemohon <span class="text-rose-700">*</span></label>
+                                <input id="nama_pemohon" name="nama_pemohon" type="text" value="{{ old('nama_pemohon') }}" autocomplete="name" maxlength="100" required aria-invalid="{{ $errors->has('nama_pemohon') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('nama_pemohon') ? 'nama_pemohon-error' : '' }}" class="w-full rounded-2xl border {{ $errors->has('nama_pemohon') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('nama_pemohon')<p id="nama_pemohon-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="email_pemohon" class="mb-2 block text-sm font-semibold text-charcoal">Email pemohon <span class="text-rose-700">*</span></label>
+                                <input id="email_pemohon" name="email_pemohon" type="email" value="{{ old('email_pemohon') }}" autocomplete="email" maxlength="255" required aria-invalid="{{ $errors->has('email_pemohon') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('email_pemohon') ? 'email_pemohon-error' : '' }}" class="w-full rounded-2xl border {{ $errors->has('email_pemohon') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('email_pemohon')<p id="email_pemohon-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="whatsapp_pemohon" class="mb-2 block text-sm font-semibold text-charcoal">Nomor WhatsApp <span class="text-rose-700">*</span></label>
+                                <input id="whatsapp_pemohon" name="whatsapp_pemohon" type="tel" value="{{ old('whatsapp_pemohon') }}" autocomplete="tel" inputmode="numeric" minlength="10" maxlength="14" required placeholder="62xxxxxxxxxx" aria-invalid="{{ $errors->has('whatsapp_pemohon') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('whatsapp_pemohon') ? 'whatsapp_pemohon-error' : '' }}" class="w-full rounded-2xl border {{ $errors->has('whatsapp_pemohon') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('whatsapp_pemohon')<p id="whatsapp_pemohon-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="akses_password" class="mb-2 block text-sm font-semibold text-charcoal">Kata sandi akses <span class="text-rose-700">*</span></label>
+                                <input id="akses_password" name="akses_password" type="password" autocomplete="new-password" minlength="6" required aria-invalid="{{ $errors->has('akses_password') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('akses_password') ? 'akses_password-error' : '' }}" class="w-full rounded-2xl border {{ $errors->has('akses_password') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('akses_password')<p id="akses_password-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="akses_password_confirmation" class="mb-2 block text-sm font-semibold text-charcoal">Konfirmasi kata sandi <span class="text-rose-700">*</span></label>
+                                <input id="akses_password_confirmation" name="akses_password_confirmation" type="password" autocomplete="new-password" minlength="6" required aria-invalid="{{ $errors->has('akses_password_confirmation') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('akses_password_confirmation') ? 'akses_password_confirmation-error' : '' }}" class="w-full rounded-2xl border {{ $errors->has('akses_password_confirmation') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('akses_password_confirmation')<p id="akses_password_confirmation-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="jam_mulai" class="mb-2 block text-sm font-semibold text-charcoal">Jam mulai <span class="text-rose-700">*</span></label>
+                                <input id="jam_mulai" name="jam_mulai" type="time" value="{{ old('jam_mulai') }}" required step="60" aria-invalid="{{ $errors->has('jam_mulai') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('jam_mulai') ? 'jam_mulai-error' : '' }}" @input="(() => { const start = $event.target.value; const [hour, minute] = start.split(':').map(Number); const end = new Date(2000, 0, 1, hour, minute + 1); const minimum = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`; const endInput = document.getElementById('jam_selesai'); endInput.min = minimum; if (!endInput.value || endInput.value <= start) { endInput.value = minimum; } })()" class="w-full rounded-2xl border {{ $errors->has('jam_mulai') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('jam_mulai')<p id="jam_mulai-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="jam_selesai" class="mb-2 block text-sm font-semibold text-charcoal">Jam selesai <span class="text-rose-700">*</span></label>
+                                <input id="jam_selesai" name="jam_selesai" type="time" value="{{ old('jam_selesai') }}" required step="60" min="{{ old('jam_mulai') ? \Carbon\Carbon::parse(old('jam_mulai'))->addMinute()->format('H:i') : '' }}" aria-invalid="{{ $errors->has('jam_selesai') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('jam_selesai') ? 'jam_selesai-error' : '' }}" class="w-full rounded-2xl border {{ $errors->has('jam_selesai') ? 'border-rose-700 focus:border-rose-700 focus:ring-rose-700/20' : 'border-border focus:border-taupe focus:ring-taupe/20' }} bg-ivory px-4 py-3.5 text-sm text-charcoal transition focus:outline-none focus:ring-2">
+                                @error('jam_selesai')<p id="jam_selesai-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </section>
+                </div>
 
-                                    @error('fasilitas.'.$item->id_fasilitas)
-                                        <p class="mt-1 text-[11px] text-rose-400">{{ $message }}</p>
-                                    @enderror
+                <aside class="space-y-7">
+                    <section class="glass-card overflow-hidden rounded-[1.75rem]" aria-labelledby="facilities-title">
+                        <div class="border-b border-border px-5 py-5 sm:px-7">
+                            <p class="text-xs font-bold uppercase tracking-[0.18em] text-taupe">Langkah 3</p>
+                            <h2 id="facilities-title" class="mt-1 text-xl font-bold text-charcoal">Fasilitas tambahan</h2>
+                            <p class="mt-2 text-xs leading-5 text-muted">Masukkan jumlah yang dibutuhkan. Jumlah akan divalidasi terhadap stok tersedia.</p>
+                        </div>
+                        <div class="space-y-3 p-5 sm:p-7">
+                            @forelse ($fasilitas as $item)
+                                <div class="flex items-center gap-4 rounded-2xl border border-border bg-ivory p-3 transition hover:border-taupe/60">
+                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-cream">
+                                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&amp;fit=crop&amp;w=240&amp;q=80" alt="Foto {{ $item->nama_fasilitas }}" class="h-full w-full object-cover" width="48" height="48" loading="lazy">
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <label for="fasilitas_{{ $item->id_fasilitas }}" class="block truncate text-sm font-semibold text-charcoal">{{ $item->nama_fasilitas }}</label>
+                                        <p class="mt-0.5 text-[11px] text-muted">{{ $item->jumlah }} unit tersedia</p>
+                                    </div>
+                                    <input id="fasilitas_{{ $item->id_fasilitas }}" name="fasilitas[{{ $item->id_fasilitas }}]" type="number" min="1" max="{{ $item->jumlah }}" value="{{ old('fasilitas.'.$item->id_fasilitas) }}" placeholder="0" class="w-20 rounded-xl border border-border bg-ivory px-3 py-2 text-center text-sm text-charcoal focus:border-taupe focus:outline-none focus:ring-2 focus:ring-taupe/20">
                                 </div>
+                                @error('fasilitas.'.$item->id_fasilitas)
+                                    <p class="-mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>
+                                @enderror
+                            @empty
+                                <div class="rounded-2xl border border-dashed border-border p-5 text-center text-xs leading-5 text-muted">Tidak ada fasilitas tambahan yang tersedia.</div>
+                            @endforelse
+                        </div>
+                    </section>
+
+                    <section class="rounded-[1.75rem] border border-border bg-cream p-5 sm:p-7" aria-labelledby="confirmation-title">
+                        <div class="flex items-start gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-charcoal text-ivory">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                            </span>
+                            <div>
+                                <h2 id="confirmation-title" class="text-sm font-bold text-charcoal">Konfirmasi pengajuan</h2>
+                                <p class="mt-1 text-xs leading-5 text-muted">Pastikan data ini benar karena peminjaman akan diproses oleh tim yang menanggung proses.</p>
                             </div>
-                        @empty
-                            <div class="rounded-xl border border-dashed border-zinc-800 p-4 text-center">
-                                <p class="text-xs text-zinc-500">Tidak ada fasilitas tambahan yang tersedia saat ini.</p>
-                            </div>
-                        @endforelse
+                        </div>
+                        <label class="mt-5 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
+                            <input id="konfirmasi" name="konfirmasi" type="checkbox" value="1" @checked(old('konfirmasi')) aria-invalid="{{ $errors->has('konfirmasi') ? 'true' : 'false' }} aria-describedby="{{ $errors->has('konfirmasi') ? 'konfirmasi-error' : '' }}" class="mt-0.5 h-4 w-4 rounded border {{ $errors->has('konfirmasi') ? 'border-rose-700' : 'border-border' }} bg-ivory text-taupe focus:ring-taupe/30">
+                            <span>Saya menyatakan data peminjaman yang saya masukkan adalah benar.</span>
+                        </label>
+                        @error('konfirmasi')<p id="konfirmasi-error" class="mt-2 text-xs font-medium text-rose-700">{{ $message }}</p>@enderror
+                    </section>
+
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <a href="{{ route('peminjam.peminjaman.index') }}" class="soft-button">Batal</a>
+                        <button type="submit" class="primary-button">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                            Kirim Pengajuan
+                        </button>
                     </div>
-                </div>
-
-                {{-- Action Buttons --}}
-                <div class="flex items-center justify-end gap-3 pt-4">
-                    <a
-                        href="{{ route('peminjam.peminjaman.index') }}"
-                        class="rounded-xl px-5 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
-                    >
-                        Batal
-                    </a>
-
-                    <button
-                        type="submit"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-zinc-200 hover:scale-[0.98] active:scale-95"
-                    >
-                        <span>Kirim Pengajuan</span>
-                        <svg class="h-4 w-4 text-zinc-900" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                        </svg>
-                    </button>
-                </div>
-
+                </aside>
             </form>
-        </div>
+            @if ($errors->any())
+                <script>
+                    const firstErrorField = {{ json_encode(array_key_first($errors->all())) }};
+                    const firstErrorElement = document.getElementById(firstErrorField);
 
-    @endif
-
-</div>
-
+                    if (firstErrorElement) {
+                        firstErrorElement.focus();
+                    }
+                </script>
+            @endif
+        @endif
+    </div>
 @endsection
