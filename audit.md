@@ -309,6 +309,37 @@
 
 **Status:** Belum diperbaiki secara universal.
 
+## Audit Cleanup — 2026-10-09
+
+Audit route, referensi source, aset, dan test dilakukan sebelum menghapus item. Worktree bersih saat pemeriksaan dimulai.
+
+### Dihapus
+
+- `app/Http/Controllers/Auth/RegisteredUserController.php` dan `app/Http/Requests/Auth/RegisterRequest.php`: tidak direferensikan route atau test; tidak ada view registrasi; README menyatakan registrasi publik di luar scope.
+- `public/images/room-visual.svg`, `public/images/facility-visual.svg`, dan `public/images/hero-operations.svg`: tidak ditemukan referensi pada source. Foto katalog menggunakan upload fasilitas/ruangan; favicon tetap dipakai.
+- `tests/Unit/ExampleTest.php`: assertion `true` tautologis tanpa menguji perilaku aplikasi.
+- `.FullName`: artefak satu baris `-NoNewline`, tanpa referensi source.
+
+### Sengaja Dipertahankan
+
+- `package-lock.json` dan `pnpm-lock.yaml`: repo masih berisi jejak penggunaan kedua package manager; memilih satu dan menghapus lockfile lain berisiko mengubah proses setup.
+- `public/images/favicon.svg`, file skill di `.agents/`, serta test integrasi/domain: masih digunakan atau menjadi bagian dari setup/coverage proyek.
+- `tests/Feature/ExampleTest.php`: dipulihkan setelah audit menunjukkan test ini satu-satunya smoke check sederhana untuk status HTTP `/`; test landing di `AuthenticationTest` menguji copy, bukan status dasar.
+- Route `/login` dan `/admin`: keduanya masih melayani redirect/autentikasi kompatibilitas, bukan route yatim.
+
+### Status Audit Lama
+
+Bagian temuan visual di atas berasal dari audit sebelumnya dan tidak semuanya diperiksa ulang dalam cleanup ini. Gunakan hasil di bagian ini hanya untuk status file/alur yang disebutkan; temuan UI lainnya perlu diverifikasi sebelum dianggap masih berlaku atau sudah selesai.
+
+### Verifikasi Cleanup
+
+- `php artisan route:list --except-vendor`: 47 route tetap terdaftar; route registrasi memang tidak ada sebelum cleanup.
+- `git grep` setelah penghapusan: tidak ada referensi ke controller/request registrasi, SVG visual yang dihapus, atau test scaffold.
+- `php artisan test --do-not-cache-result`: 155 dari 163 test lulus; 7 failure dan 1 error.
+- Failure: `AuthenticationTest::test_guest_can_open_the_public_user_dashboard`; `PeminjamanFacilityTest::test_request_without_facilities_is_successful`; `test_facility_keys_that_normalize_to_the_same_id_are_rejected`; `test_invalid_damaged_or_empty_stock_facilities_are_rejected`; `test_requested_quantity_cannot_exceed_total_stock_and_validation_leaves_no_loan`; `test_overlapping_approved_loans_are_grouped_and_reduce_stock_across_rooms`; `test_negative_remaining_stock_is_reported_as_zero`.
+- Error: `PeminjamanFacilityTest::test_one_or_multiple_facilities_are_stored_as_details` gagal menemukan record peminjaman yang diharapkan.
+- Lockfile npm/pnpm dipertahankan karena konfigurasi package manager belum diseragamkan. Tidak ada dependency atau migration yang dihapus.
+
 **Rekomendasi:** gunakan `scroll-padding-top` pada `html` dan sesuaikan nilai dengan tinggi header yang aktif.
 
 ### P3 — Footer text dan container dapat berukuran terlalu kecil pada landscape mobile

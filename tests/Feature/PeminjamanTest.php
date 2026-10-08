@@ -118,6 +118,7 @@ class PeminjamanTest extends TestCase
 
     public function test_request_form_displays_the_uploaded_facility_image(): void
     {
+        Ruangan::factory()->create(['status' => StatusRuangan::Tersedia]);
         $fasilitas = Fasilitas::factory()->create([
             'nama_fasilitas' => 'Kamera Dokumentasi',
             'kondisi' => KondisiFasilitas::Baik,
@@ -137,6 +138,7 @@ class PeminjamanTest extends TestCase
 
     public function test_request_form_caps_facility_quantity_at_available_stock(): void
     {
+        Ruangan::factory()->create(['status' => StatusRuangan::Tersedia]);
         $fasilitas = Fasilitas::factory()->create([
             'nama_fasilitas' => 'Mikrofon',
             'kondisi' => KondisiFasilitas::Baik,
